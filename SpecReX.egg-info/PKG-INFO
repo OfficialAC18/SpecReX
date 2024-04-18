@@ -1,0 +1,22 @@
+Metadata-Version: 2.1
+Name: SpecReX
+Version: 0.0.1
+Summary: causal Spectral Responsibility-based eXplanations of black-box-classifiers
+Author-email: Akchunya Chanchal <akchunyachanchal@gmail.com>, David Kelly <dkellino@gmail.com>
+License-File: LICENSE
+Requires-Dist: tensorflow>=2.10
+Requires-Dist: numba>=0.57
+Requires-Dist: opencv-python>=4.7.0
+Requires-Dist: scipy>=1.10
+Requires-Dist: imutils>=0.5.4
+Requires-Dist: toml>=0.10
+Requires-Dist: anytree>=2.8.0
+Requires-Dist: fastcache>=1.1.0
+Requires-Dist: tqdm>=4.65.0
+Requires-Dist: sqlalchemy>=2.0.16
+Requires-Dist: matplotlib>=3.7.1
+Requires-Dist: onnxruntime>=1.17.0
+Requires-Dist: scikit-image>=0.21.0
+Requires-Dist: pandas>=2.2.0
+Requires-Dist: torch>=2.2.0
+Requires-Dist: torchvision>=0.17.0
