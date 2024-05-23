@@ -5,7 +5,6 @@ import tensorflow as tf
 import numpy.typing as npt
 import platform
 import numpy as np
-import copy
 import pandas as pd
 import onnxruntime as ort
 import sys
@@ -36,14 +35,8 @@ class Shape:
 def negative_mask_multi(shape: Shape):
     if shape.order == "first":
         return np.zeros((shape.channels, shape.length), dtype=bool)
-    else:
-        return np.zeros((shape.length, shape.channels), dtype=bool)
+    return np.zeros((shape.length, shape.channels), dtype=bool)
     
-def spectra_mask_multi(spectra: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
-    #Return a copy of the spectra as the mask
-    return copy.deepcopy(spectra)
-
-
 #Default Normalization is SNV
 def convert_image_generic(path, x, y, means=None, stds=None):
     img = tf.keras.preprocessing.image.load_img(path, target_size=(x, y))
@@ -69,6 +62,8 @@ def convert_spec_wn_generic(spectra_path, wn_path, x, means = None, stds=None, c
     #Read the shape as (1, length)
     spec_array = pd.read_csv(spectra_path, header = None).values
     wn_array = pd.read_csv(wn_path, header = None).values
+    spec_array = spec_array.astype('float32')
+    wn_array = wn_array.astype('float32')
 
     #To fit to a specfic shape, the current strategy is truncation to the shape (We can't handle shapes larger than the spectra as of now)
     if x is not None:
@@ -98,10 +93,7 @@ def convert_spec_wn_generic(spectra_path, wn_path, x, means = None, stds=None, c
             spec_array[i,:] /= std
         
     return np.expand_dims(spec_array,axis = 0), wn_array
-
-
-         
-
+    
 def prepare_image(path, shape=None, means=None, stds=None):
     if shape is None:
         return convert_image_generic(path, 0, 0, means=means, stds=stds)
@@ -169,8 +161,7 @@ def get_prediction_function(model, top_predictions, gpu):
             m = model_load(model)
             return (
                 lambda mutant: get_prediction(m, mutant, top_predictions=top_predictions),
-                #This PURELY A PLACEHOLDER, In order to test the system
-                Shape((1,3195,1)),
+                Shape((m.shape)),
             )
     else:
         logger.warning(f"did not recognise {model}, so loading mobilenet")

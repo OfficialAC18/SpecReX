@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 import random
+from functools import partial
 from scipy.signal import savgol_filter
 
 
@@ -64,6 +65,92 @@ def split_and_interpolate(wavenumber,
         spectra[r_start:r_lim] = interp_region
     
     return spectra
+
+def interpolate_mask(mask,
+                    wavenumber,
+                    spectra,
+                    method = "linear"):
+    
+    '''
+    Interpolate the unmasked regions of the spectra
+    (Currently only supports 1D Spectra)
+    
+    args:
+        mask - Binary mask containing positions to be interpolated (1: Interpolate, 0: Keep Original)
+        Wavenumbers - Wavenumbers to be interpolated (x values)
+        spectra - Spectral data to be interpolated (y values)
+        method - Type of interpolation to be performed (linear, cubic (splines))
+
+    Returns:
+        mutant - Interpolated array of values
+    '''
+    #Values to be interpolated
+    interp_pos = np.where(mask == True)
+
+    #Values to be kept as original spectra
+    spec_pos = np.where(mask == False)
+
+    #Create a mutant array of the shape of the mask
+    mutant = np.zeros(mask.shape, dtype = float)
+
+    #Put the unmasked region back in the mask
+    mutant[spec_pos] = spectra[spec_pos]
+
+    #Sort the wavenumber regions for the interpolation functions
+    sorted_spec_pos = np.argsort(wavenumber[spec_pos])
+
+    if method == "linear":
+        interp_region = np.interp(wavenumber[interp_pos],
+                                  wavenumber[spec_pos][sorted_spec_pos],
+                                  spectra[spec_pos][sorted_spec_pos])
+        mutant[interp_pos] = interp_region
+    
+    elif method == "cubic":
+        from scipy.interpolate import CubicSpline
+        interp_func = CubicSpline(wavenumber[spec_pos][sorted_spec_pos],
+                                  spectra[spec_pos][sorted_spec_pos])
+        
+        interp_region = interp_func(wavenumber[interp_pos])
+        mutant[interp_pos] = interp_region
+
+    return mutant
+
+def interp_func(mask,
+                wavenumber,
+                spectra,
+                method = "linear"):
+    
+    '''
+    Create interpolation functions to interpolate unmasked regions of the spectra
+    (Currently only supports 1D Spectra)
+    
+    args:
+        mask - Binary mask containing positions to be interpolated (1: Interpolate, 0: Keep Original)
+        Wavenumbers - Wavenumbers to be interpolated (x values)
+        spectra - Spectral data to be interpolated (y values)
+        method - Type of interpolation to be performed (linear, cubic (splines))
+
+    Returns:
+        interp_func - Interpolation function to use for calculating interpolated value
+    '''
+
+    #Values to be kept as original spectra
+    spec_pos = np.where(mask == 0)
+
+    #Sort the wavenumber regions for the interpolation functions
+    sorted_spec_pos = np.argsort(wavenumber[spec_pos])
+
+    if method == "linear":
+        interp_func = partial(np.interp,xp = wavenumber[spec_pos][sorted_spec_pos],
+                               fp = spectra[spec_pos][sorted_spec_pos])
+    
+    elif method == "cubic":
+        from scipy.interpolate import CubicSpline
+        interp_func = CubicSpline(wavenumber[spec_pos][sorted_spec_pos],
+                                  spectra[spec_pos][sorted_spec_pos])
+
+    return interp_func
+
 
 def poisson_noise(wavenumber, spectra, Imax = 1000):
     '''

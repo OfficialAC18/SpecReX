@@ -13,14 +13,16 @@ from anytree.cachedsearch import find
 
 from ReX.distributions import Distribution
 
-from ReX.model_funcs import get_prediction_function, Shape, negative_mask_multi, spectra_mask_multi
+from ReX.model_funcs import get_prediction_function, Shape, negative_mask_multi
+
+from ReX.specaug import interpolate_mask
 
 from ReX.box import average_box_length, initialise_tree, build_tree
 
 from ReX.logger import logger
 
 CAUSAL = Enum("CAUSAL", ["Responsibility"])
-MUTANT_PATH = "./mutants"
+MUTANT_PATH = "/home/akchunya/Akchunya/MSc Thesis/SpecReX/mutants"
 
 _combinations = [
     [
@@ -48,11 +50,11 @@ _combinations = [
 ]
 
 
-def apply_combination(mask, wn, spec_shape, children, i):
+def apply_combination(mask, children, i):
     """apply combination of parts to mask"""
     sets = [children[j] for j in _combinations[i] if j < len(children)]
     for s in sets:
-            s.interpolate_mask(mask, wn, spec_shape)
+        s.apply_to_mask(mask)
     return sets
 
 
@@ -64,12 +66,12 @@ def subbox(tree, name):
     return []
 
 
-def set_held(tree, explanation, wn, spec_shape, held) -> None:
+def set_held(tree, explanation, held) -> None:
     """Interpolate the regions we are holding in the mask"""
     for b_name in held:
         box = find(tree, lambda node: node.name == b_name)
         if box is not None:
-            box.interpolate_mask(explanation, wn, spec_shape)
+            box.apply_to_mask(explanation)
 
 
 def responsibility(parts, weights):
@@ -116,15 +118,6 @@ def causal_explanation(
             np.random.seed(new)
             seed = new
         logger.info("random seed = %d", seed)
-
-    #Pretty irrelevant
-    # if isinstance(args.mask_value, List):
-    #     args.mask_value = [ti / 255.0 for ti in args.mask_value]
-    # if isinstance(args.mask_value, int):
-    #     args.mask_value /= 255.0
-
-    #Just pass it as function argument
-    # spec_shape = Shape(spec_array.shape)
 
     if responsibility_map is None:
         responsibility_map = np.zeros((spec_shape.length), dtype=np.float32)
@@ -190,7 +183,7 @@ def causal_explanation(
         held = []
 
         for job in queue:
-            mutant = spectra_mask_multi(spec_array) #Creates a replica of the original spectra
+            mask = negative_mask_multi(spec_shape)
             for processing in job:
                 held = [p for p in job if p not in [processing]]
                 children = subbox(tree, processing)
@@ -206,31 +199,24 @@ def causal_explanation(
                 #This needs to be optimized
                 for i in range(14):
                     #We need to save this seperately, rather than make it common with set held
-                    partition = apply_combination(mutant, wn_array, spec_shape, children, i)
-                    set_held(tree, mutant, wn_array, spec_shape, held)
+                    partition = apply_combination(mask, children, i)
+                    set_held(tree, mask, held)
 
-                    #Again, Only works with current version of the split_and_concat function
+                    #Now, Create the required mutant
+                    mutant = interpolate_mask(mask,wn_array[0,:,:],spec_array[0,:,:])
+
+                    #Append the mutant to the mutant list
                     mutants.append(mutant)
-    
-                    partitions.append(partition)
-                    mutant = spectra_mask_multi(spec_array)
 
-                    # if spec_shape.order == "first" and isinstance(args.mask_value, List):
-                    #     im = spec_array.transpose(0, 2, 1)
-                    #     m = mask.transpose(1, 2, 0)
-                    #     temp = np.where(m, im, args.mask_value)
-                    #     temp = temp.transpose(0, 1, 2).astype("float32")
-                    #     mutants.append(temp)
-                    # else:
-                    #     mutants.append(np.where(mask, spec_array, args.mask_value))
-                    # partitions.append(partition)
-                    # mask[:] = False
-                    
+                    #Add required partitions to the list
+                    partitions.append(partition)
+                    mask[:] = False
+
 
         #Save set of mutants to get an idea of what is created
         #Easy to fix, add to args
         for idx,mutant in enumerate(mutants):
-            print('Shape of mutant:',np.squeeze(mutant,0).shape)
+            print('Shape of mutant:',mutant.shape)
             np.save(os.path.join(MUTANT_PATH,f"mutant{idx}.npy"),
                             mutant.squeeze())
 
@@ -241,6 +227,7 @@ def causal_explanation(
         total_work += len(mutants)
 
         #Parallelize this
+        #Create an arg value when intializing the prediction funtion
         predictions = [prediction_func(mutant) for mutant in mutants]  # type: ignore #Parallelize this, push as batch
         weights = None
         l = list(zip(*predictions))

@@ -28,7 +28,7 @@ cpus = 1
 # number of times to run the algorithm, defaults to 1
 iters = 20
 # minimum child size, in pixels
-min_size = 25
+min_size = 50
 # whether to weight responsibility by prediction confidence
 weighted = false
 

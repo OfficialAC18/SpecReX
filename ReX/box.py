@@ -44,7 +44,7 @@ class BoxInternal:
     def shape(self):
         return (self.row_stop - self.row_start,) #self.col_stop - self.col_start)
 
-    def spawn_children(self, min_size, invert, pos_ranking=None) -> List[Box]:
+    def spawn_children(self, min_size, invert, pos_ranking=None, interp_func=None) -> List[Box]:
         """split a box into 4 contiguous sections"""
         if self.length() < min_size:
             return []
@@ -111,12 +111,13 @@ class BoxInternal:
         """set everything in the bounding box to False"""
         current_mask[self.row_start : self.row_stop] = False
 
-    # def apply_to_mask(self, current_mask): #Instead of this, we perform split and interpolate
-    #     """set everything in the bounding box to True"""
-    #     if current_mask.shape[0] == 3:
-    #         current_mask[:, self.row_start : self.row_stop] = True
-    #     else:
-    #         current_mask[self.row_start : self.row_stop] = True
+    # We do this and interpolate regions outside this
+    def apply_to_mask(self, current_mask):
+        """set everything in the bounding box to True"""
+        if current_mask.shape[0] == 3:
+            current_mask[:, self.row_start : self.row_stop] = True
+        else:
+            current_mask[self.row_start : self.row_stop] = True
 
     def interpolate_mask(self, 
                          current_mask,
@@ -150,14 +151,16 @@ class Box(BoxInternal, NodeMixin):
         name="",
         parent=None,
         children=[],
+        interp_func = None
     ) -> None:
         super().__init__(row_start, row_stop, distribution, distribution_args, name)
         self.parent = parent
         self.children = children
+        self.interp_func = interp_func
 
     def add_children_to_tree(self, min_size, invert, pos_ranking=None):
         if not self.children:
-            self.children = self.spawn_children(min_size, pos_ranking=pos_ranking, invert=invert)
+            self.children = self.spawn_children(min_size, pos_ranking=pos_ranking, invert=invert, interp_func = self.interp_func)
 
 
 def initialise_tree(r_lim, distribution, distribution_args, r_start=0) -> Box:
