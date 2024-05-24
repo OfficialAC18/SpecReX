@@ -57,7 +57,7 @@ def convert_image_generic(path, x, y, means=None, stds=None):
         return img
 
 #Default Normalization: SNV
-def convert_spec_wn_generic(spectra_path, wn_path, x, means = None, stds=None, channel_first=True):
+def convert_spec_wn_generic(spectra_path, wn_path, x, means = None, stds=None):
     #Read Wavenumber and Spectra
     #Read the shape as (1, length)
     spec_array = pd.read_csv(spectra_path, header = None).values
@@ -65,11 +65,22 @@ def convert_spec_wn_generic(spectra_path, wn_path, x, means = None, stds=None, c
     spec_array = spec_array.astype('float32')
     wn_array = wn_array.astype('float32')
 
+    if Shape(np.expand_dims(spec_array,axis=0)).order == 'first':
+        channel_first = True
+    else:
+        channel_first = False
+
+
     #To fit to a specfic shape, the current strategy is truncation to the shape (We can't handle shapes larger than the spectra as of now)
     if x is not None:
-        if x <= spec_array.shape[1] and x <= wn_array.shape[1]:
-            spec_array = spec_array[:,:x]
-            wn_array = wn_array[:,:x]
+        if channel_first:
+            if x <= spec_array.shape[1] and x <= wn_array.shape[1]:
+                spec_array = spec_array[:,:x]
+                wn_array = wn_array[:,:x]
+        elif not channel_first:
+            if x <= spec_array.shape[0] and x <= wn_array.shape[0]:
+                spec_array = spec_array[:x,:]
+                wn_array = wn_array[:x,:]
         else:
             print("Currently, Interpolation is not supported, please provide custom preprocessing script")
             sys.exit(0)
@@ -86,13 +97,22 @@ def convert_spec_wn_generic(spectra_path, wn_path, x, means = None, stds=None, c
 
     else:
         logger.info("applying SNV normalization using calculated values")
-        for i in range(spec_array.shape[0]):
-            mean = np.mean(spec_array[i,:])
-            std = np.std(spec_array[i,:])
-            spec_array[i,:] -= mean
-            spec_array[i,:] /= std
+        if channel_first:
+            for i in range(spec_array.shape[0]):
+                mean = np.mean(spec_array[i,:])
+                std = np.std(spec_array[i,:])
+                spec_array[i,:] -= mean
+                spec_array[i,:] /= std
+        else:
+            for i in range(spec_array.shape[1]):
+                mean = np.mean(spec_array[:,i])
+                std = np.std(spec_array[:,i])
+                spec_array[:,i] -= mean
+                spec_array[:,i] /= std
+
+
         
-    return np.expand_dims(spec_array,axis = 0), wn_array
+    return np.expand_dims(spec_array,axis = 0), np.expand_dims(wn_array, axis = 0)
     
 def prepare_image(path, shape=None, means=None, stds=None):
     if shape is None:
@@ -161,7 +181,8 @@ def get_prediction_function(model, top_predictions, gpu):
             m = model_load(model)
             return (
                 lambda mutant: get_prediction(m, mutant, top_predictions=top_predictions),
-                Shape((m.shape)),
+                #This PURELY A PLACEHOLDER, In order to test the system
+                Shape((1,3195,1)),
             )
     else:
         logger.warning(f"did not recognise {model}, so loading mobilenet")

@@ -7,7 +7,7 @@ import numpy as np
 
 from ReX.distributions import Distribution, random_pos
 
-from ReX.specaug import split_and_interpolate
+# from ReX.specaug import split_and_interpolate, interpolate_mask
 
 
 class BoxInternal:
@@ -42,9 +42,9 @@ class BoxInternal:
         self.name += name
 
     def shape(self):
-        return (self.row_stop - self.row_start,) #self.col_stop - self.col_start)
+        return (self.row_stop - self.row_start,)
 
-    def spawn_children(self, min_size, invert, pos_ranking=None, interp_func=None) -> List[Box]:
+    def spawn_children(self, min_size, invert, pos_ranking=None) -> List[Box]:
         """split a box into 4 contiguous sections"""
         if self.length() < min_size:
             return []
@@ -71,6 +71,7 @@ class BoxInternal:
             distribution=self.distribution,
             distribution_args=self.distribution_args,
             name=self.name,
+            interp_func = self.interp_func 
         )
         b0.update_name(":0")
 
@@ -80,6 +81,7 @@ class BoxInternal:
             distribution=self.distribution,
             distribution_args=self.distribution_args,
             name=self.name,
+            interp_func = self.interp_func 
         )
         b1.update_name(":1")
 
@@ -89,6 +91,7 @@ class BoxInternal:
             distribution=self.distribution,
             distribution_args=self.distribution_args,
             name=self.name,
+            interp_func = self.interp_func 
         )
         b2.update_name(":2")
 
@@ -98,6 +101,7 @@ class BoxInternal:
             distribution=self.distribution,
             distribution_args=self.distribution_args,
             name=self.name,
+            interp_func = self.interp_func 
         )
         b3.update_name(":3")
 
@@ -114,30 +118,30 @@ class BoxInternal:
     # We do this and interpolate regions outside this
     def apply_to_mask(self, current_mask):
         """set everything in the bounding box to True"""
-        if current_mask.shape[0] == 3:
+        if current_mask.shape[0] == 3 or current_mask.shape[0] == 1:
             current_mask[:, self.row_start : self.row_stop] = True
         else:
             current_mask[self.row_start : self.row_stop] = True
 
-    def interpolate_mask(self, 
-                         current_mask,
-                         wavenumber,
-                         spec_shape,
-                         method='linear'):
-        '''
-        Interpolate the mask at the bounds of the child node
+    #Function seems redundant, remove
+    # def interpolate_mask(self, 
+    #                      current_mask,
+    #                      wavenumber,
+    #                      spectra,
+    #                      method='linear'):
+    #     '''
+    #     Interpolate the mask at the bounds of the child node
 
-        args:
-            current_mask - The current mask, with all previous interpolations applied
-            wavenumber - The wavenumbers associated with the spectra
-            method - Type of interpolation to be performed (linear, cubic (splines))
-        '''
-        current_mask = split_and_interpolate(wavenumber=wavenumber,
-                                             spectra=current_mask,
-                                             spec_shape=spec_shape,
-                                             r_start = self.row_start,
-                                             r_lim=self.row_stop,
-                                             method=method)
+    #     args:
+    #         current_mask - The current mask, with all previous interpolations applied
+    #         wavenumber - The wavenumbers associated with the spectra
+    #         spectra - The spectra to be interpolated
+    #         method - Type of interpolation to be performed (linear, cubic (splines))
+    #     '''
+    #     spectra = interp_mask(mask = current_mask,
+    #                                wavenumber=wavenumber,
+    #                                spectra=spectra,
+    #                                method=method)
 
 
 #We use row_start/row_stop | col_start/col_stop as the regions where we interpolate
@@ -151,7 +155,7 @@ class Box(BoxInternal, NodeMixin):
         name="",
         parent=None,
         children=[],
-        interp_func = None
+        interp_func = None,
     ) -> None:
         super().__init__(row_start, row_stop, distribution, distribution_args, name)
         self.parent = parent
@@ -160,7 +164,7 @@ class Box(BoxInternal, NodeMixin):
 
     def add_children_to_tree(self, min_size, invert, pos_ranking=None):
         if not self.children:
-            self.children = self.spawn_children(min_size, pos_ranking=pos_ranking, invert=invert, interp_func = self.interp_func)
+            self.children = self.spawn_children(min_size, pos_ranking=pos_ranking, invert=invert)
 
 
 def initialise_tree(r_lim, distribution, distribution_args, r_start=0) -> Box:
@@ -174,7 +178,7 @@ def show_tree(tree):
 def average_box_length(tree, d) -> float:
     lengths = [[node.length() for node in children] for children in LevelOrderGroupIter(tree)]
     try:
-        return np.mean(lengths[d], axis=0)
+        return np.mean(lengths[d], axis=0) #Added the one to see if removing the initial massive split helps
     except IndexError:
         return 0.0
 

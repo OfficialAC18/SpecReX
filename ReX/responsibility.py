@@ -22,7 +22,7 @@ from ReX.box import average_box_length, initialise_tree, build_tree
 from ReX.logger import logger
 
 CAUSAL = Enum("CAUSAL", ["Responsibility"])
-MUTANT_PATH = "/home/akchunya/Akchunya/MSc Thesis/SpecReX/mutants"
+MUTANT_PATH = "Full path to location to save mutants"
 
 _combinations = [
     [
@@ -67,7 +67,7 @@ def subbox(tree, name):
 
 
 def set_held(tree, explanation, held) -> None:
-    """Interpolate the regions we are holding in the mask"""
+    """Retain the regions we are holding in the rest of the partition"""
     for b_name in held:
         box = find(tree, lambda node: node.name == b_name)
         if box is not None:
@@ -187,6 +187,8 @@ def causal_explanation(
             for processing in job:
                 held = [p for p in job if p not in [processing]]
                 children = subbox(tree, processing)
+                #Testing if an adaptive box size works better
+                # args.min_box_size = np.mean([child.length() for child in children])
                 children = list(filter(lambda child: child.length() >= args.min_box_size , children)) #Can we avoid creating them in the first place?
 
                 if len(children) == 0:
@@ -202,8 +204,15 @@ def causal_explanation(
                     partition = apply_combination(mask, children, i)
                     set_held(tree, mask, held)
 
-                    #Now, Create the required mutant
-                    mutant = interpolate_mask(mask,wn_array[0,:,:],spec_array[0,:,:])
+                    #This is in order to make sure bad mutant fails
+                    if np.any(mask):
+                        #Now, Create the required mutant
+                        mutant = interpolate_mask(mask,wn_array[0,:,:],spec_array[0,:,:])
+                    else:
+                        #Take a random value from the spec array and just make it uniform at that value
+                        val = np.random.choice(spec_array[0,:,:].squeeze())
+                        mutant = np.ones(mask.shape,dtype='float32')
+                        mutant *= val
 
                     #Append the mutant to the mutant list
                     mutants.append(mutant)
@@ -217,6 +226,11 @@ def causal_explanation(
         #Easy to fix, add to args
         for idx,mutant in enumerate(mutants):
             print('Shape of mutant:',mutant.shape)
+            if idx == 0:
+                np.save(os.path.join(MUTANT_PATH,f"wavenumber.npy"),
+                            wn_array.squeeze())
+                np.save(os.path.join(MUTANT_PATH,f"spectra.npy"),
+                            spec_array.squeeze())
             np.save(os.path.join(MUTANT_PATH,f"mutant{idx}.npy"),
                             mutant.squeeze())
 
@@ -228,7 +242,7 @@ def causal_explanation(
 
         #Parallelize this
         #Create an arg value when intializing the prediction funtion
-        predictions = [prediction_func(mutant) for mutant in mutants]  # type: ignore #Parallelize this, push as batch
+        predictions = [prediction_func(np.expand_dims(mutant,axis = 0)) for mutant in mutants]  # type: ignore #Parallelize this, push as batch
         weights = None
         l = list(zip(*predictions))
 
@@ -240,8 +254,8 @@ def causal_explanation(
 
         resp_weights = []
         for i, pred in enumerate(predictions):
-            #This is to check if the predicitions match what is required
-            if len(np.intersect1d(args.targets, pred)) > 0:
+            #This is to check if the predictions match what is required
+            if len(np.intersect1d(args.targets, pred)) > 0 and l[1][i] > 0.90:
                 passing_mutants.append(mutants[i])
                 pp = [child.name for child in partitions[i]]
                 if len(pp) > 0:
@@ -265,7 +279,7 @@ def causal_explanation(
             if box is not None:
                 depth_reached = max(depth_reached, box.depth)
                 add = rp[int(box.name[-1])]
-                responsibility_map[box.row_start : box.row_stop, box.col_start : box.col_stop] += add
+                responsibility_map[box.row_start : box.row_stop] += add
 
         areas = [np.sum([box_lengths[j] for j in job]) for job in passing_partitions]
         take = np.argsort(areas)

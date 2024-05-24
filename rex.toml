@@ -7,18 +7,16 @@ top_predictions = 1
 # random seed, only set for reproducibility
 seed = 42
 # whether to use gpu or not, defaults to true
-gpu = true
+gpu = false
 # means for min-max normalization, these are for imagenet
 # means = [0.485, 0.456, 0.406]
 # standards devs for min-max normalization, these are for imagenet
 # stds = [0.229, 0.224, 0.225]
-#Interpolation Method
-interpolation = 'linear'
 
 
 [causal]
 # maximum depth of tree, defaults to 4
-tree_depth = 10
+tree_depth = 4
 # limit on number of combinations to consider, defaults to 200
 search_limit = 2000
 # minimum work acceptable, a scalar of <search_limit>
@@ -26,17 +24,20 @@ min_work = 0.0
 # number of cpus to use, defaults to 1, not advised to set this higher if gpu = True
 cpus = 1
 # number of times to run the algorithm, defaults to 1
-iters = 20
-# minimum child size, in pixels
-min_size = 50
+iters = 5
+# minimum child size, in wavenumber length
+min_size = 25
+# maximum child size, in wavenumber length
+max_size = 450
 # whether to weight responsibility by prediction confidence
 weighted = false
 
 [causal.distribution]
 # distribution for splitting the box, defaults to uniform. Possible choices are 'uniform' | 'binom' | 'betabinom'
-distribution = 'uniform'
+distribution = 'binom'
 # supplimental arguments for distribution creation
-dist_args = [1.1, 1.1]
+#dist_args = [1.1, 1.1]
+dist_args = 0.7
 # use the pixel ranking as a probability distribution, boostrapping from 'distribution' above
 adaptive = false
 # how many iterations of <distribution> to do before using <adaptive>
@@ -46,11 +47,11 @@ switch = 0
 
 [explanation]
 # iterate through pixel ranking in chunks, defaults to causal.min_size
-chunk = 25
+chunk = 1
 
 [explanation.spatial]
 # initial search radius
-initial_radius = 24
+initial_radius = 1
 # increment to change radius
 radius_eta = 0.2
 # number of times to expand before quitting, defaults to 10

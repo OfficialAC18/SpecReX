@@ -8,6 +8,7 @@ from numpy.typing import NDArray
 from enum import Enum
 
 from ReX.model_funcs import Shape, negative_mask_multi
+from ReX.specaug import interpolate_mask
 from ReX.logger import logger
 
 Strategy = Enum("Strategy", ["Linear", "Chunk", "Spatial", "Spotlight", "MultiSpotlight"])
@@ -31,9 +32,9 @@ def linear_search(img_array, prediction_func, targets, pixel_ranking, mask_value
         chunk = levels[i : i + chunk_size]
         for _, loc in chunk:
             if shape.order == "first":
-                mask[:, loc[0], loc[1]] = True
+                mask[loc[0], loc[1]] = True #Has been Changed for SpecReX
             else:
-                mask[loc[0], loc[1], :] = True
+                mask[loc[1], loc[0]] = True #Has been changed for SpecReX
         m = simple_prediction(prediction_func, mask, targets, img_array, mask_value)
         if m is not None:
             return m
@@ -79,7 +80,6 @@ def linear_search_binary(img_array, prediction_func, targets, pixel_ranking, mas
 def neighbours(shape, radius: int, row_number: int, column_number: int, pixel_ranking: NDArray[np.float32], val: float):
     nm = np.zeros(shape, dtype=bool)
     for i in range(row_number - 1 - radius, row_number + radius):
-        for j in range(column_number - 1 - radius, column_number + radius):
             if (
                 i >= 0
                 and i < pixel_ranking.shape[0]
@@ -88,6 +88,17 @@ def neighbours(shape, radius: int, row_number: int, column_number: int, pixel_ra
                 and pixel_ranking[i, j] >= val
             ):
                 nm[i, j] = True
+    return nm
+
+def neighbours_spectra(shape, radius: int, row_number: int, pos_ranking: NDArray[np.float32], val: float):
+    nm = np.zeros(shape, dtype=bool)
+    for i in range(row_number - 1 - radius, row_number + radius):
+            if (
+                i >= 0
+                and i < pos_ranking.shape[0]
+                and pos_ranking[i] >= val
+            ):
+                nm[i] = True
     return nm
 
 
@@ -107,6 +118,15 @@ def simple_prediction(prediction_func, mask, targets, img_array, mask_value):
     if len(inter) > 0:
         return mask
     return None
+
+def simple_prediction_spectra(prediction_func, mask, targets, spec_array, wn_array):
+    mutant = interpolate_mask(mask,wn_array[0,:,:],spec_array[0,:,:])
+    predictions = prediction_func(np.expand_dims(mutant,axis = 0))[0]
+    inter = np.intersect1d(targets, predictions)
+    if len(inter) > 0:
+        return mask
+    return None
+    
 
 
 def ablate(explanation, prediction_func, targets, img_array, pixel_ranking, mask_value, chunk_size):
@@ -162,6 +182,50 @@ def spatial_search(
                 return ablate(explanation, prediction_func, targets, img_array, pixel_ranking, mask_value, chunk_size)
     else:
         red = ablate(explanation, prediction_func, targets, img_array, pixel_ranking, mask_value, chunk_size)
+        return red if red is not None else explanation
+
+    return None
+
+def spatial_search_spectra(
+    spec_array,
+    wn_array,
+    prediction_func,
+    targets,
+    radius,
+    radius_eta,
+    pos_ranking,
+    r,
+    mask_value,
+    chunk_size,
+    no_expansions=10,
+):
+    """performs a spatial search over responsibility landscape <pos_ranking>"""
+    shape = Shape(spec_array.shape)
+
+    mask = neighbours_spectra((shape.length, shape.channels), radius, r, pos_ranking, 0.0)
+    if shape.order == "first":
+        mask = mask.transpose((1, 0))
+    logger.info(
+        "performing spatial search from coordinates (%d, %d), " + "given a radius of %d and defined between %f and %f.",
+        r,
+        radius,
+        np.min(pos_ranking),
+        np.max(pos_ranking),
+    )
+
+    explanation = simple_prediction_spectra(prediction_func, mask, targets, spec_array, wn_array)
+    if explanation is None:
+        for _ in range(no_expansions):
+            radius = int(radius * (1 + radius_eta))
+            mask = neighbours_spectra((shape.length, shape.channels), radius, r, pos_ranking, 0.0)
+            if shape.order == "first":
+                mask = mask.transpose((1,0))
+            explanation = simple_prediction_spectra(prediction_func, mask, targets, spec_array, wn_array) #Instead of wn_array, this was previously mask_value, investigate
+            if explanation is not None:
+                logger.info(f"explanation found at {(r)} with {radius}")
+                return ablate(explanation, prediction_func, targets, spec_array, pos_ranking, mask_value, chunk_size)
+    else:
+        red = ablate(explanation, prediction_func, targets, spec_array, pos_ranking, mask_value, chunk_size)
         return red if red is not None else explanation
 
     return None

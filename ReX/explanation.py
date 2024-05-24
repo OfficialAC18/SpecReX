@@ -12,7 +12,7 @@ from ReX.multi_explanation import multi_spotlight, spotlight_search
 from ReX.model_funcs import *
 from ReX.logger import logger
 from ReX.database import add_to_database, initialise_rex_db
-from ReX.ranking import linear_search, spatial_search, Strategy
+from ReX.ranking import linear_search, spatial_search_spectra, Strategy
 from ReX.responsibility import causal_explanation
 
 
@@ -49,6 +49,7 @@ def generate_multi_explanations(
 
 def generate_explanation(
     spec_array,
+    wn_array,
     prediction_func,
     targets,
     pos_ranking,
@@ -67,20 +68,23 @@ def generate_explanation(
         pass
     if strategy == Strategy.Spatial:
         sort = np.argsort(pos_ranking, axis=None)
-        r, c = center_of_mass(pos_ranking)
-        rows, cols = np.unravel_index(sort, pos_ranking.shape)
+        # r, c = center_of_mass(pos_ranking)
+        r = center_of_mass(pos_ranking)
+        # rows, cols = np.unravel_index(sort, pos_ranking.shape)
+        rows = np.unravel_index(sort, pos_ranking.shape)
         rows = rows[::-1]
-        cols = cols[::-1]
-        # print((r, c), (rows[0], cols[0]))
-        return spatial_search(
+        # cols = cols[::-1]
+        #print((r, c), (rows[0], cols[0]))
+        print(r, rows[0][0])
+        return spatial_search_spectra(
             spec_array,
+            wn_array,
             prediction_func,
             targets,
             radius,
             radius_eta,
             pos_ranking,
-            rows[0],
-            cols[0],
+            rows[0][0],
             mask_value,
             chunk_size,
             no_expansions=no_expansions,
@@ -117,7 +121,6 @@ def single_or_multi(args, spec_array, wn_array, prediction_func, pos_ranking):
     if args.strategy == Strategy.MultiSpotlight:
         explanations = generate_multi_explanations(
             spec_array,
-            wn_array,
             prediction_func,
             args.targets,
             pos_ranking,
@@ -198,7 +201,7 @@ def update_db(
 
 
 def explanation(args):
-    prediction_func, input_shape = get_prediction_function(args.model, args.top_predictions, args.gpu)
+    prediction_func, input_shape = get_prediction_function(args.model, args.top_predictions, args.gpu) #Put a test inside this function to figure out if it can be parallezed
 
     if args.preprocess is not None:
         logger.info("using the user-provided preprocess script %s", args.preprocess_location)
@@ -234,11 +237,13 @@ def explanation(args):
 
         if spec_shape.channels != input_shape.channels:
             spec_array = spec_array.transpose(0, 2, 1)
+            wn_array = wn_array.transpose(0,2,1)
             spec_shape = Shape(spec_array.shape)
         
         #This is most likely not needed
         if input_shape.order != spec_shape.order:
             spec_array = spec_array.transpose(0, 2, 1)
+            wn_array = wn_array.transpose(0,2,1)
             spec_shape = Shape(spec_array.shape)
 
     db = None
@@ -247,8 +252,7 @@ def explanation(args):
 
     if args.targets is None:
         #PlaceHolder for now
-        args.targets = 0
-        # args.targets = prediction_func(spec_array)[0]
+        args.targets = prediction_func(spec_array)[0]
     logger.info("spectra classified as %s", args.targets)
 
     # spec_array = Shape(spec_array.shape)
@@ -293,7 +297,7 @@ def explanation(args):
         pos_ranking = resp_map if resp_map.max() == 0 else resp_map / resp_map.max()  # type: ignore
         avg_box_size /= args.iters
 
-    explanations, is_multi = single_or_multi(args, spec_array, wn_array,prediction_func, pos_ranking)
+    explanations, is_multi = single_or_multi(args, spec_array, wn_array, prediction_func, pos_ranking)
     end = time.time()
     time_taken = end - start
     logger.info(time_taken)
