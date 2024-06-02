@@ -213,8 +213,16 @@ def explanation(args):
     else:
         # if spectra and wavenumber is already the correct size etc, then just turn it into a numpy array
         if args.processed:
-            spec_array = pd.read_csv(args.spectra_path, header = None).values
-            wn_array = pd.read_csv(args.wn_path, header = None).values
+            if 'csv' in args.spectra_path:
+                spec_array = pd.read_csv(args.spectra_path, header = None).values
+            else:
+                spec_array = np.load(args.spectra_path)
+            
+            if 'csv' in args.wn_path:
+                wn_array = pd.read_csv(args.wn_path, header = None).values
+            else:
+                wn_array =  np.load(args.wn_path)
+
             spec_array = spec_array.astype("float32")
             wn_array = spec_array.astype("float32")
 

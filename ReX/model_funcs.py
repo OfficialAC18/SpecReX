@@ -60,8 +60,15 @@ def convert_image_generic(path, x, y, means=None, stds=None):
 def convert_spec_wn_generic(spectra_path, wn_path, x, means = None, stds=None):
     #Read Wavenumber and Spectra
     #Read the shape as (1, length)
-    spec_array = pd.read_csv(spectra_path, header = None).values
-    wn_array = pd.read_csv(wn_path, header = None).values
+    if 'csv' in spectra_path:
+        spec_array = pd.read_csv(spectra_path, header = None).values
+    else:
+        spec_array = np.load(spectra_path)
+    
+    if 'csv' in wn_path:
+        wn_array = pd.read_csv(wn_path, header = None).values
+    else:
+        wn_array =  np.load(wn_path)
     spec_array = spec_array.astype('float32')
     wn_array = wn_array.astype('float32')
 

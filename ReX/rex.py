@@ -7,8 +7,9 @@ from ReX.image_generation import produce_image, masked_image
 from ReX.explanation import explanation, summarise
 from ReX.logger import logger, set_log_level
 from ReX.ranking import Strategy
+import numpy as np
 
-
+RANKING_DIR = "Path to directory where the rankings/explanations are saved"
 def main():
     """main entry point to ReX cmdline tool"""
     args = get_all_args()
@@ -17,6 +18,10 @@ def main():
     logger.debug("running ReX with the following args:\n %s", args)
 
     ranking, exp, *_ = explanation(args)
+
+    np.save(os.path.join(RANKING_DIR,"explanation.npy"),explanation)
+    np.save(os.path.join(RANKING_DIR,"ranking.npy"),ranking)
+    exit(-1)
 
     pm, pos, mean, std, median = summarise(ranking)
     logger.info(
