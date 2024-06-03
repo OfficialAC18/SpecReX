@@ -87,5 +87,5 @@ An example is included in ```scripts/example_preprocess.py```
 # SpecReX (Example)
 In order to execute SpecReX, refer to the following example
 ``` bash
-rex --spectra_filename <path_to_spectra (Currently supports only csv)> --wn_filename <path_to_wavenumber (Currently supports only csv)> --model <path_to_model>
+rex --spectra_filename <path_to_spectra> --wn_filename <path_to_wavenumber> --model <path_to_model> (Optional) --ranking_dir <path_to_dir> (Output) --output <filename.ext>
 ```
