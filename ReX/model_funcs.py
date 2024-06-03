@@ -69,6 +69,7 @@ def convert_spec_wn_generic(spectra_path, wn_path, x, means = None, stds=None):
         wn_array = pd.read_csv(wn_path, header = None).values
     else:
         wn_array =  np.load(wn_path)
+
     spec_array = spec_array.astype('float32')
     wn_array = wn_array.astype('float32')
 

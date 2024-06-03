@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 import cv2
+import os
+os.environ["XDG_SESSION_TYPE"] = "eglfs"
+
 import numpy as np
 from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy.ndimage import center_of_mass
+from scipy.signal import find_peaks, peak_prominences
 
 # from ReX.logger import logger
 
@@ -103,6 +107,95 @@ def masked_image(path, destination, explanation, mask_value, processed=True):
         if img.shape[0] == 3:
             img = img.transpose(1, 2, 0)
     cv2.imwrite(destination, img)  # type: ignore
+
+def spectra_ranking_plot(destination, spectra, wn, ranking,width=2):
+    fig, axs = plt.subplots(nrows=2,
+                       ncols=1,
+                       figsize=(10,10))
+
+    #Set the facecolor 
+    fig.patch.set_facecolor('gray')
+    fig.patch.set_alpha(0.45)
+
+    #Plot the spectra with the wavenumber in the first plot
+    #The ranking along with the wavenumber in the second plot
+    axs[0].plot(wn.squeeze(),spectra,color='black')
+    axs[0].title.set_text('Spectra')
+    axs[0].grid(which = 'major', linestyle='-')
+    axs[0].set_xlabel('Wavenumber')
+    axs[0].set_ylabel('Intensity (A.U)')
+    # axs[0].grid(which = 'minor', linestyle='--',alpha = 0.75)
+    axs[1].plot(wn.squeeze(),ranking,color='black')
+    axs[1].title.set_text('Ranking')
+    axs[1].grid(which = 'major', linestyle='-')
+    axs[1].set_xlabel('Wavenumber')
+    axs[1].set_ylabel('Responsibility')
+
+    #Calculate the local maxima, clear the noise based on the prominence of the peak
+    #These are the peaks where we will plot the vertical lines
+    resp_locations = find_peaks(ranking)[0]
+    prominences = peak_prominences(ranking,resp_locations)[0]
+    prominences = prominences/max(prominences)
+    resp_locations = [loc for idx, loc in enumerate(resp_locations) if prominences[idx] >= 0.5]
+
+    #Calculate the alphas for the peaks
+    magnitude = ranking/np.max(ranking)
+    
+    #Get the y-min and set it to be static (For plotting purposes)
+    plot_ymin = axs[0].get_ylim()[0]
+    axs[0].set_ylim(bottom = plot_ymin)
+
+    for location in resp_locations:
+        #0.6 is an arbitrary value, it seems to be the best compromise between visibility of both spectra and peak
+        alpha = 0.6*magnitude[location]
+
+        #Generate values for y at the specfic location, with the max being the spectra value at the point
+        plot_y_vals = np.linspace(plot_ymin,spectra[location])
+        plot_x_vals = np.ones_like(plot_y_vals)*location
+        axs[0].plot(plot_x_vals,
+                    plot_y_vals,
+                    color = 'red',
+                    alpha = alpha,
+                    linewidth = 1)
+        for i in range(-width,width):
+            plot_y_vals = np.linspace(plot_ymin,spectra[location+i])
+            plot_x_vals = np.ones_like(plot_y_vals)*(location+i)
+            axs[0].plot(plot_x_vals,
+                        plot_y_vals,
+                        color = 'red',
+                        alpha = alpha,
+                        linewidth = 1)
+
+    #Similarilty for the ranking plot
+    plot_ymin = axs[1].get_ylim()[0]
+    axs[1].set_ylim(bottom = plot_ymin)
+
+    for location in resp_locations:
+        alpha = 0.6*magnitude[location]
+        #Generate values for y at the specfic location, with the max being the spectra value at the point
+        plot_y_vals = np.linspace(plot_ymin,ranking[location])
+        plot_x_vals = np.ones_like(plot_y_vals)*location
+        axs[1].plot(plot_x_vals,
+                    plot_y_vals,
+                    color = 'red',
+                    alpha = alpha,
+                    linewidth = 1)
+        for i in range(-width,width):
+            plot_y_vals = np.linspace(plot_ymin,ranking[location+i])
+            plot_x_vals = np.ones_like(plot_y_vals)*(location+i)
+            axs[1].plot(plot_x_vals,
+                        plot_y_vals,
+                        color = 'red',
+                        alpha = alpha,
+                        linewidth = 1)
+
+    #Save the plot
+    fig.savefig(
+        destination,
+        dpi = 900
+    )
+
+
 
 
 ### Debugging functions ###

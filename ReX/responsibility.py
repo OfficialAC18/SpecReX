@@ -22,7 +22,6 @@ from ReX.box import average_box_length, initialise_tree, build_tree
 from ReX.logger import logger
 
 CAUSAL = Enum("CAUSAL", ["Responsibility"])
-MUTANT_PATH = "Full path to location to save mutants"
 
 _combinations = [
     [
@@ -208,32 +207,14 @@ def causal_explanation(
                     if np.any(mask):
                         #Now, Create the required mutant
                         mutant = interpolate_mask(mask,wn_array[0,:,:],spec_array[0,:,:])
-                    else:
-                        #Take a random value from the spec array and just make it uniform at that value
-                        val = np.random.choice(spec_array[0,:,:].squeeze())
-                        mutant = np.ones(mask.shape,dtype='float32')
-                        mutant *= val
 
-                    #Append the mutant to the mutant list
-                    mutants.append(mutant)
-
-                    #Add required partitions to the list
-                    partitions.append(partition)
+                        #Append the mutant to the mutant list
+                        mutants.append(mutant)
+                        
+                        #Add required partitions to the list    
+                        partitions.append(partition)
+                    
                     mask[:] = False
-
-
-        #Save set of mutants to get an idea of what is created
-        #Easy to fix, add to args
-        for idx,mutant in enumerate(mutants):
-            print('Shape of mutant:',mutant.shape)
-            if idx == 0:
-                np.save(os.path.join(MUTANT_PATH,f"wavenumber.npy"),
-                            wn_array.squeeze())
-                np.save(os.path.join(MUTANT_PATH,f"spectra.npy"),
-                            spec_array.squeeze())
-            np.save(os.path.join(MUTANT_PATH,f"mutant{idx}.npy"),
-                            mutant.squeeze())
-
 
         if len(mutants) == 0:
             break
@@ -255,7 +236,7 @@ def causal_explanation(
         resp_weights = []
         for i, pred in enumerate(predictions):
             #This is to check if the predictions match what is required
-            if len(np.intersect1d(args.targets, pred)) > 0 and l[1][i] > 0.90:
+            if len(np.intersect1d(args.targets, pred)) > 0: #and l[1][i] > 0.90:
                 passing_mutants.append(mutants[i])
                 pp = [child.name for child in partitions[i]]
                 if len(pp) > 0:
@@ -283,7 +264,7 @@ def causal_explanation(
 
         areas = [np.sum([box_lengths[j] for j in job]) for job in passing_partitions]
         take = np.argsort(areas)
-        queue = [passing_partitions[i] for i in take[:1]]
+        queue = [passing_partitions[i] for i in take[:1]] #Checking what happens when we take multiple regions
         iters += 1
 
     if total_work < (args.search_limit * min_work) and total_restart_attempts > 0:
