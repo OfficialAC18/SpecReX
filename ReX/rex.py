@@ -39,6 +39,5 @@ def main():
     if args.surface is not None or args.contour is not None or args.heatmap is not None:
         produce_image(args, ranking)
 
-
 if __name__ == "__main__":
     main()

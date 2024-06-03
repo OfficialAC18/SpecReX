@@ -16,7 +16,7 @@ gpu = false
 
 [causal]
 # maximum depth of tree, defaults to 4
-tree_depth = 4
+tree_depth = 10
 # limit on number of combinations to consider, defaults to 200
 search_limit = 2000
 # minimum work acceptable, a scalar of <search_limit>
@@ -24,7 +24,7 @@ min_work = 0.0
 # number of cpus to use, defaults to 1, not advised to set this higher if gpu = True
 cpus = 1
 # number of times to run the algorithm, defaults to 1
-iters = 5
+iters = 20
 # minimum child size, in wavenumber length
 min_size = 25
 # maximum child size, in wavenumber length
