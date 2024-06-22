@@ -109,6 +109,13 @@ def masked_image(path, destination, explanation, mask_value, processed=True):
     cv2.imwrite(destination, img)  # type: ignore
 
 def spectra_ranking_plot(destination, spectra, wn, ranking,width=2):
+    #Make sure that all the arrays are 1-D
+    spectra = np.squeeze(spectra)
+    wn = np.squeeze(wn)
+
+    assert ranking.shape == wn.shape
+    assert spectra.shape == wn.shape
+
     fig, axs = plt.subplots(nrows=2,
                        ncols=1,
                        figsize=(10,10))
@@ -119,13 +126,13 @@ def spectra_ranking_plot(destination, spectra, wn, ranking,width=2):
 
     #Plot the spectra with the wavenumber in the first plot
     #The ranking along with the wavenumber in the second plot
-    axs[0].plot(wn.squeeze(),spectra,color='black')
+    axs[0].plot(wn,spectra,color='black')
     axs[0].title.set_text('Spectra')
     axs[0].grid(which = 'major', linestyle='-')
     axs[0].set_xlabel('Wavenumber')
     axs[0].set_ylabel('Intensity (A.U)')
     # axs[0].grid(which = 'minor', linestyle='--',alpha = 0.75)
-    axs[1].plot(wn.squeeze(),ranking,color='black')
+    axs[1].plot(wn,ranking,color='black')
     axs[1].title.set_text('Ranking')
     axs[1].grid(which = 'major', linestyle='-')
     axs[1].set_xlabel('Wavenumber')
@@ -194,8 +201,6 @@ def spectra_ranking_plot(destination, spectra, wn, ranking,width=2):
         destination,
         dpi = 900
     )
-
-
 
 
 ### Debugging functions ###
