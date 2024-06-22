@@ -158,7 +158,7 @@ def spectra_ranking_plot(destination, spectra, wn, ranking,width=2):
 
         #Generate values for y at the specfic location, with the max being the spectra value at the point
         plot_y_vals = np.linspace(plot_ymin,spectra[location])
-        plot_x_vals = np.ones_like(plot_y_vals)*location
+        plot_x_vals = np.ones_like(plot_y_vals)*wn[location]
         axs[0].plot(plot_x_vals,
                     plot_y_vals,
                     color = 'red',
@@ -166,14 +166,14 @@ def spectra_ranking_plot(destination, spectra, wn, ranking,width=2):
                     linewidth = 1)
         for i in range(-width,width):
             plot_y_vals = np.linspace(plot_ymin,spectra[location+i])
-            plot_x_vals = np.ones_like(plot_y_vals)*(location+i)
+            plot_x_vals = np.ones_like(plot_y_vals)*(wn[location+i])
             axs[0].plot(plot_x_vals,
                         plot_y_vals,
                         color = 'red',
                         alpha = alpha,
                         linewidth = 1)
 
-    #Similarilty for the ranking plot
+    #Similarily for the ranking plot
     plot_ymin = axs[1].get_ylim()[0]
     axs[1].set_ylim(bottom = plot_ymin)
 
@@ -181,7 +181,7 @@ def spectra_ranking_plot(destination, spectra, wn, ranking,width=2):
         alpha = 0.6*magnitude[location]
         #Generate values for y at the specfic location, with the max being the spectra value at the point
         plot_y_vals = np.linspace(plot_ymin,ranking[location])
-        plot_x_vals = np.ones_like(plot_y_vals)*location
+        plot_x_vals = np.ones_like(plot_y_vals)*wn[location]
         axs[1].plot(plot_x_vals,
                     plot_y_vals,
                     color = 'red',
@@ -189,7 +189,7 @@ def spectra_ranking_plot(destination, spectra, wn, ranking,width=2):
                     linewidth = 1)
         for i in range(-width,width):
             plot_y_vals = np.linspace(plot_ymin,ranking[location+i])
-            plot_x_vals = np.ones_like(plot_y_vals)*(location+i)
+            plot_x_vals = np.ones_like(plot_y_vals)*(wn[location+i])
             axs[1].plot(plot_x_vals,
                         plot_y_vals,
                         color = 'red',
