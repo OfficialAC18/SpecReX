@@ -170,6 +170,7 @@ def get_prediction_function(model, top_predictions, gpu):
     if type(model) == str:
         if model.endswith(".onnx"):
             sess_options = ort.SessionOptions()
+            sess_options.intra_op_num_threads = 0
             if gpu:
                 logger.info("using gpu for onnx inference session")
                 if platform.uname().system == "Darwin":
