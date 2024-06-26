@@ -236,7 +236,7 @@ def causal_explanation(
         resp_weights = []
         for i, pred in enumerate(predictions):
             #This is to check if the predictions match what is required
-            if len(np.intersect1d(args.targets, pred)) > 0: #and l[1][i] > 0.90:
+            if len(np.intersect1d(args.targets, pred)) > 0: #and l[1][i] > 0.95:
                 passing_mutants.append(mutants[i])
                 pp = [child.name for child in partitions[i]]
                 if len(pp) > 0:

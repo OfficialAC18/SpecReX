@@ -68,13 +68,9 @@ def generate_explanation(
         pass
     if strategy == Strategy.Spatial:
         sort = np.argsort(pos_ranking, axis=None)
-        # r, c = center_of_mass(pos_ranking)
         r = center_of_mass(pos_ranking)
-        # rows, cols = np.unravel_index(sort, pos_ranking.shape)
         rows = np.unravel_index(sort, pos_ranking.shape)
         rows = rows[::-1]
-        # cols = cols[::-1]
-        #print((r, c), (rows[0], cols[0]))
         print(r, rows[0][0])
         return spatial_search_spectra(
             spec_array,
@@ -275,7 +271,6 @@ def explanation(args):
     if args.iters >= 1:
         resp_map = None
         for i in trange(args.iters):
-            # for i in range(0, args.iters):
             if args.adaptive and i > args.bootstrap:
                 logger.info("using adaptive sampling")
                 args.distribution = Distribution.Adaptive
@@ -326,4 +321,4 @@ def explanation(args):
             avg_box_size=avg_box_size,
         )
 
-    return pos_ranking, explanations
+    return pos_ranking, explanations, spec_array, wn_array

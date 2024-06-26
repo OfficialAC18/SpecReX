@@ -16,7 +16,7 @@ def main():
 
     logger.debug("running ReX with the following args:\n %s", args)
 
-    ranking,*_ = explanation(args)
+    ranking,_,spec_array, wn_array = explanation(args)
     if hasattr(args,'ranking_dir'):
         np.save(os.path.join(args.ranking_dir,"ranking_2_1.npy"),ranking)
 
@@ -34,7 +34,7 @@ def main():
         name, ext = os.path.splitext(args.output[0])
         if args.targets is not None:
             out = f"{name}_{args.targets[0]}{ext}"
-            spectra_ranking_plot(out,np.load(args.spectra_path),np.load(args.wn_path),ranking)
+            spectra_ranking_plot(out,spec_array,wn_array,ranking)
 
     if args.surface is not None or args.contour is not None or args.heatmap is not None:
         produce_image(args, ranking)
