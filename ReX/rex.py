@@ -17,8 +17,6 @@ def main():
     logger.debug("running ReX with the following args:\n %s", args)
 
     ranking,_,spec_array, wn_array = explanation(args)
-    if hasattr(args,'ranking_dir'):
-        np.save(os.path.join(args.ranking_dir,"ranking_2_1.npy"),ranking)
 
     pm, pos, mean, std, median = summarise(ranking)
     logger.info(

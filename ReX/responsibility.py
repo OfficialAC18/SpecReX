@@ -206,7 +206,7 @@ def causal_explanation(
                     #This is in order to make sure bad mutant fails
                     if np.any(mask):
                         #Now, Create the required mutant
-                        mutant = interpolate_mask(mask,wn_array[0,:,:],spec_array[0,:,:], method = 'cubic')
+                        mutant = interpolate_mask(mask,wn_array[0,:,:],spec_array[0,:,:], method = 'linear')
 
                         #Append the mutant to the mutant list
                         mutants.append(mutant)

@@ -62,50 +62,67 @@ class BoxInternal:
             row_lt = random_pos(self.distribution, [self.row_start, row_mid-1, self.distribution_args])
             row_gt = random_pos(self.distribution, [row_mid+1, self.row_stop, self.distribution_args])
 
-            if row_mid is None or row_lt is None or row_gt is None:
-                return []
+            # if row_mid is None or row_lt is None or row_gt is None:
+            #     return []
+        children = []
+        counter = 0
 
-        b0 = Box(
-            self.row_start,
-            row_lt,
-            distribution=self.distribution,
-            distribution_args=self.distribution_args,
-            name=self.name,
-            interp_func = self.interp_func 
-        )
-        b0.update_name(":0")
+        if row_lt is not None:
+            b0 = Box(
+                self.row_start,
+                row_lt,
+                distribution=self.distribution,
+                distribution_args=self.distribution_args,
+                name=self.name,
+                interp_func = self.interp_func 
+            )
+            b0.update_name(f":{counter}")
+            counter += 1
 
-        b1 = Box(
-            row_lt,
-            row_mid,
-            distribution=self.distribution,
-            distribution_args=self.distribution_args,
-            name=self.name,
-            interp_func = self.interp_func 
-        )
-        b1.update_name(":1")
+            children.append(b0)
+            
 
-        b2 = Box(
-            row_mid,
-            row_gt,
-            distribution=self.distribution,
-            distribution_args=self.distribution_args,
-            name=self.name,
-            interp_func = self.interp_func 
-        )
-        b2.update_name(":2")
+            if row_mid is not None:
+                b1 = Box(
+                    row_lt,
+                    row_mid,
+                    distribution=self.distribution,
+                    distribution_args=self.distribution_args,
+                    name=self.name,
+                    interp_func = self.interp_func 
+                )
+                b1.update_name(f":{counter}")
+                counter += 1
+            
+            children.append(b1)
+        
+        if row_mid is not None and row_gt is not None:
+            b2 = Box(
+                row_mid,
+                row_gt,
+                distribution=self.distribution,
+                distribution_args=self.distribution_args,
+                name=self.name,
+                interp_func = self.interp_func 
+            )
+            b2.update_name(f":{counter}")
+            counter += 1
 
-        b3 = Box(
-            row_gt,
-            self.row_stop,
-            distribution=self.distribution,
-            distribution_args=self.distribution_args,
-            name=self.name,
-            interp_func = self.interp_func 
-        )
-        b3.update_name(":3")
+            b3 = Box(
+                row_gt,
+                self.row_stop,
+                distribution=self.distribution,
+                distribution_args=self.distribution_args,
+                name=self.name,
+                interp_func = self.interp_func 
+            )
+            b3.update_name(f":{counter}")
+            counter += 1
 
-        return [b0, b1, b2, b3]
+            children.append(b2)
+            children.append(b3)
+
+        return children
 
     #For SpecRex
     def length(self):

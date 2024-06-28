@@ -34,7 +34,7 @@ weighted = false
 
 [causal.distribution]
 # distribution for splitting the box, defaults to uniform. Possible choices are 'uniform' | 'binom' | 'betabinom'
-distribution = 'binom'
+distribution = 'uniform'
 # supplimental arguments for distribution creation
 #dist_args = [1.1, 1.1]
 dist_args = 0.7
