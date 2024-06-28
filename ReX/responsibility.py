@@ -239,7 +239,15 @@ def causal_explanation(
             if len(np.intersect1d(args.targets, pred)) > 0: #and l[1][i] > 0.95:
                 passing_mutants.append(mutants[i])
                 pp = [child.name for child in partitions[i]]
-                if len(pp) > 0:
+                
+                subset_exists = False
+                #Check if a subset of the same exists
+                for passed_part in passing_partitions:
+                    if set(passed_part) <= set(pp):
+                        subset_exists = True
+                        break
+
+                if len(pp) > 0 and not subset_exists:
                     passing_partitions.append(pp)
                     if weights is not None:
                         if len(weights[i]) == 1:
