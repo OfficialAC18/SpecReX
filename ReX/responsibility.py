@@ -87,6 +87,39 @@ def responsibility(parts, weights):
 
     return output
 
+def inverse_responsibility(failed_parts, weights):
+    """Give responsibility to the partitions that were changed"""
+    output = np.zeros(4, dtype=np.float32)
+    failing_subpart = []
+    max_subpart = 0 #This is to ensure we don't give responsibility to nonexisiting subparts
+    for w, part in enumerate(failed_parts):
+        f_parts = list(map(lambda p: np.uint(p[-1]),part))
+
+        #Add the subparts that make up a failing part
+        for subpart in f_parts:
+            failing_subpart.append(subpart)
+            if subpart > max_subpart:
+                max_subpart = int(subpart)
+        
+    #Get the unique elements
+    failing_subpart = set(failing_subpart)
+    
+    for w, parts in enumerate(failed_parts):
+        k = 4 - len(part) #Calculates k based on the number of parts changed
+        #The parts are then those that are not in failing subpart
+        parts = [i for i in range(0,max_subpart+1) if i not in failing_subpart]
+
+        #calculate the responsbility
+        for p in parts:
+            if weights == []:
+                output[p] += 1/k
+            else:
+                output[p] += weights[w] * 1/k
+    
+    return output
+        
+
+
 
 def causal_explanation(
     process,
@@ -178,6 +211,7 @@ def causal_explanation(
         mutants = []
         partitions = []
         passing_partitions = []
+        failing_partitions = []
         passing_mutants = []
         held = []
 
@@ -257,10 +291,14 @@ def causal_explanation(
                 total_passing += 1
             else:
                 total_failing += 1
+                fp = [child.name for child in partitions[i]]
+                if len(fp) > 0:
+                    failing_partitions.append(fp)
 
         rp = responsibility(passing_partitions, resp_weights)
+        # rp += inverse_responsibility(failing_partitions, resp_weights)
 
-        if np.sum(rp) == 0.0:
+        if np.sum(rp) == 0.0 and passing_partitions is None:
             break
         children = np.unique(np.hstack(passing_partitions))
         for box in children:
