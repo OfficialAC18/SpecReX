@@ -11,7 +11,7 @@ from ReX.model_funcs import Shape, negative_mask_multi
 from ReX.specaug import interpolate_mask
 from ReX.logger import logger
 
-Strategy = Enum("Strategy", ["Linear", "Chunk", "Spatial", "Spotlight", "MultiSpotlight"])
+Strategy = Enum("Strategy", ["Linear", "Chunk", "Spatial", "Spotlight", "MultiSpotlight", "FixedBeam"])
 
 
 def linear_search(img_array, prediction_func, targets, pixel_ranking, mask_value, chunk_size, shape=None):

@@ -68,3 +68,21 @@ spotlight_size = 24
 spotlight_eta = 0.2
 # objective function for spotlight search. Possible options 'mean' | 'max' | 'min'
 obj_function = 'mean'
+
+[explanation.spectral]
+# Interpolation Method (Linear, Cubic)
+interp_method = 'linear'
+# Spectral Method [Fixed-Beam]
+method = 'fixedbeam'
+# Default size of beam
+beam_size = 20
+# engulf window
+beam_engulf_window = 10
+# Decrease beam width by this value (Decreases by this amount on both sides)
+beam_eta = 1
+# responsibility similarity
+responsibility_similarity = 0.9
+# scaling factor for previous maxima
+scale_factor = 0.5
+# Maximum beams to explore as potential explanations
+beams = 10

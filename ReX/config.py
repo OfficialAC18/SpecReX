@@ -65,6 +65,15 @@ class Args:
         self.spotlight_eta: float = 0.0
         self.spotlight_step: int = 0
         self.spotlight_objective_function = None
+        # beams args
+        self.beam_size: int = 0
+        self.beam_eta: int = 0
+        self.beam_engulf_window: int = 0
+        self.responsibility_similarity: float = 0.0
+        self.maxima_scaling_factor: float = 0.0
+        self.max_beams: int = 10
+        self.interp_method: str = None
+
         self.no_expansions = 0
 
     def __repr__(self) -> str:
@@ -262,6 +271,7 @@ def get_all_args(path=None):
 
     spatial_dict = try_dict(explain_dict, "spatial")
     multi_dict = try_dict(explain_dict, "multi")
+    spectral_dict = try_dict(explain_dict, "spectral")
 
     args = None
 
@@ -281,7 +291,6 @@ def get_all_args(path=None):
 
     if cmd_args.process_script is not None:
         try:
-
             name, _ = os.path.splitext(cmd_args.process_script)
             spec = importlib.util.spec_from_file_location(name, cmd_args.process_script)
             preprocess = importlib.util.module_from_spec(spec)  # type: ignore
@@ -327,6 +336,15 @@ def get_all_args(path=None):
     args.spotlight_eta = key_or_default(multi_dict, "spotlight_eta", 0.95)
     args.spotlight_step = key_or_default(multi_dict, "spotlight_step", 4)
     args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
+
+    # spectral args
+    args.beam_size = key_or_default(spectral_dict, "beam_size", 20)
+    args.beam_eta = key_or_default(spectral_dict, "beam_eta", 1)
+    args.beam_engulf_window = key_or_default(spectral_dict, "beam_engulf_window", 10)
+    args.responsibility_similarity = key_or_default(spectral_dict, "responsibility_similarity", 0.9)
+    args.maxima_scaling_factor = key_or_default(spectral_dict, "scale_factor", 0.5)
+    args.max_beams = key_or_default(spectral_dict, "beams", 10)
+    args.interp_method = key_or_default(spectral_dict, "interp_method", "linear")
 
     args.chunk_size = key_or_default(explain_dict, "chunk", args.min_box_size)
 

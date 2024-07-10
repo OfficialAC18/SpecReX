@@ -16,7 +16,7 @@ def main():
 
     logger.debug("running ReX with the following args:\n %s", args)
 
-    ranking,_,spec_array, wn_array = explanation(args)
+    ranking, explanations ,spec_array, wn_array = explanation(args)
 
     pm, pos, mean, std, median = summarise(ranking)
     logger.info(
@@ -32,7 +32,7 @@ def main():
         name, ext = os.path.splitext(args.output[0])
         if args.targets is not None:
             out = f"{name}_{args.targets[0]}{ext}"
-            spectra_ranking_plot(out,spec_array,wn_array,ranking)
+            spectra_ranking_plot(out,spec_array,wn_array, ranking, explanations)
 
     if args.surface is not None or args.contour is not None or args.heatmap is not None:
         produce_image(args, ranking)

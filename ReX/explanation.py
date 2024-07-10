@@ -9,10 +9,11 @@ import time
 
 from ReX.distributions import Distribution
 from ReX.multi_explanation import multi_spotlight, spotlight_search
+from ReX.spectral_explanations import fixed_beam_search
 from ReX.model_funcs import *
 from ReX.logger import logger
 from ReX.database import add_to_database, initialise_rex_db
-from ReX.ranking import linear_search, spatial_search_spectra, Strategy
+from ReX.ranking import linear_search, Strategy
 from ReX.responsibility import causal_explanation
 
 
@@ -45,7 +46,6 @@ def generate_multi_explanations(
 
     logger.warning("not implemented")
     return NotImplemented
-
 
 def generate_explanation(
     spec_array,
@@ -147,6 +147,22 @@ def single_or_multi(args, spec_array, wn_array, prediction_func, pos_ranking):
 
         return expln, False
 
+
+def spectral_explanations(args, spec_array, wn_array, prediction_func, pos_ranking):
+    return fixed_beam_search(
+        spec_array=spec_array,
+        wn_array=wn_array,
+        prediction_func=prediction_func,
+        pos_ranking=pos_ranking,
+        interp_method=args.interp_method,
+        beam_size=args.beam_size,
+        beam_engulf_window=args.beam_engulf_window,
+        beam_eta=args.beam_eta,
+        responsibility_similarity=args.responsibility_similarity,
+        maxima_scaling_factor=args.maxima_scaling_factor,
+        max_beams=args.max_beams,
+        target_class=args.targets
+    )
 
 def update_db(
     db,
@@ -259,8 +275,6 @@ def explanation(args):
         args.targets = prediction_func(spec_array)[0]
     logger.info("spectra classified as %s", args.targets)
 
-    # spec_array = Shape(spec_array.shape)
-
     start = time.time()
     passing: int = 0
     failing: int = 0
@@ -300,7 +314,9 @@ def explanation(args):
         pos_ranking = resp_map if resp_map.max() == 0 else resp_map / resp_map.max()  # type: ignore
         avg_box_size /= args.iters
 
-    explanations, is_multi = single_or_multi(args, spec_array, wn_array, prediction_func, pos_ranking)
+    # explanations, is_multi = single_or_multi(args, spec_array, wn_array, prediction_func, pos_ranking)
+    explanations = spectral_explanations(args, spec_array, wn_array, prediction_func, pos_ranking)
+    is_multi = False
     end = time.time()
     time_taken = end - start
     logger.info(time_taken)

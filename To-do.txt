@@ -1,0 +1,34 @@
+1. Find why the max depth of the tree is always 2
+    a. First, test on some of the real examples, observe if the same is occuring there as well
+        -> If yes, then set debugger at Tree, step through step by step and observe the shapes, size of the trees.
+            -> Yes, this is what seems to be happening. (Fixed, set to Uniform)
+
+            -> We do however, get variable depth sizes when using Uniform. (Done)
+
+            -> On Line 66, in box.py, instead of returning nothing at all, atleast return the examples which meet the criteria. (Done)
+
+           -> The mutant call should use the function learnt from the parent and interpolate the region that is covered by the current example (Don't know if required, current approach working well)
+
+           -> Create Adaptive Combination of child nodes (Currently, code only supports for breadth of 4, make if for all possible depths)
+
+           -> In the passing partition portions, if a partition has passed individually, and other partitions have not passed and when we add the passing partition along with the non-passing partitions and it passes, don't add it to the passing partition list.
+           (Done, No real difference, however, does smooth result)
+
+           -> For partitions, which utilise multiple child nodes, start by fixing one and then reducing the other, until classification changes, then fix one of them to the minimum you just calculated, and then start reducing the other.
+           (Longer process, but see what can be done).
+
+            -> To get an idea on how/what held works/does, maybe fork a recent version of ReX and see what happens there.
+
+            -> For the range(14) call in SpecReX/ReX, avoid calls where we see that the example is returning the same example as before. (responsibility.py).
+
+            -> For the red-line (targeting) in SpecReX, maybe utilise wavenumber-based extraction (maximum showup?/lookup)
+
+2. Clean up the code-base, follow best practices (Read a book on this if you have to).
+    a. Luciano Ramalho's Fluent Python is a good one.
+
+3. Write up the report for the same.
+    a. Need to write both the Paper version and the Thesis version for the same.
+
+4. Write code to generate visualization of the tree used to generate the results.
+
+5. Come up with a testing strategy, and a suite of tests.

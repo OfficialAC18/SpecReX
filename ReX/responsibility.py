@@ -119,8 +119,6 @@ def inverse_responsibility(failed_parts, weights):
     return output
         
 
-
-
 def causal_explanation(
     process,
     spec_array,
@@ -240,7 +238,7 @@ def causal_explanation(
                     #This is in order to make sure bad mutant fails
                     if np.any(mask):
                         #Now, Create the required mutant
-                        mutant = interpolate_mask(mask,wn_array[0,:,:],spec_array[0,:,:], method = 'linear')
+                        mutant = interpolate_mask(mask,wn_array[0,:,:],spec_array[0,:,:], method = args.interp_method)
 
                         #Append the mutant to the mutant list
                         mutants.append(mutant)
@@ -298,8 +296,9 @@ def causal_explanation(
         rp = responsibility(passing_partitions, resp_weights)
         # rp += inverse_responsibility(failing_partitions, resp_weights)
 
-        if np.sum(rp) == 0.0 and passing_partitions is None:
+        if np.sum(rp) == 0.0:
             break
+
         children = np.unique(np.hstack(passing_partitions))
         for box in children:
             box = find(tree, lambda node: node.name == box)

@@ -108,7 +108,7 @@ def masked_image(path, destination, explanation, mask_value, processed=True):
             img = img.transpose(1, 2, 0)
     cv2.imwrite(destination, img)  # type: ignore
 
-def spectra_ranking_plot(destination, spectra, wn, ranking,width=2):
+def spectra_ranking_plot(destination, spectra, wn, ranking, explanations):
     #Make sure that all the arrays are 1-D
     spectra = np.squeeze(spectra)
     wn = np.squeeze(wn)
@@ -152,49 +152,65 @@ def spectra_ranking_plot(destination, spectra, wn, ranking,width=2):
     plot_ymin = axs[0].get_ylim()[0]
     axs[0].set_ylim(bottom = plot_ymin)
 
-    for location in resp_locations:
-        #0.6 is an arbitrary value, it seems to be the best compromise between visibility of both spectra and peak
-        alpha = 0.6*magnitude[location]
+    #Get the color wheel for plotting
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
 
-        #Generate values for y at the specfic location, with the max being the spectra value at the point
-        plot_y_vals = np.linspace(plot_ymin,spectra[location])
-        plot_x_vals = np.ones_like(plot_y_vals)*wn[location]
-        axs[0].plot(plot_x_vals,
-                    plot_y_vals,
-                    color = 'red',
-                    alpha = alpha,
-                    linewidth = 1)
-        for i in range(-width,width):
-            plot_y_vals = np.linspace(plot_ymin,spectra[location+i])
-            plot_x_vals = np.ones_like(plot_y_vals)*(wn[location+i])
+    for cause, widths in explanations.keys():
+        #Get the next color for the cause
+        color = next(colors)
+        for location, width in zip(cause,widths):
+            #0.6 is an arbitrary value, it seems to be the best compromise between visibility of both spectra and peak
+            alpha = 0.6*magnitude[location]
+
+            #Generate values for y at the specfic location, with the max being the spectra value at the point
+            plot_y_vals = np.linspace(plot_ymin,spectra[location])
+            plot_x_vals = np.ones_like(plot_y_vals)*wn[location]
             axs[0].plot(plot_x_vals,
                         plot_y_vals,
-                        color = 'red',
+                        color = color,
                         alpha = alpha,
                         linewidth = 1)
+            
+            for i in range(-width,width):
+                plot_y_vals = np.linspace(plot_ymin,spectra[location+i])
+                plot_x_vals = np.ones_like(plot_y_vals)*(wn[location+i])
+                axs[0].plot(plot_x_vals,
+                            plot_y_vals,
+                            color = color,
+                            alpha = alpha,
+                            linewidth = 1)
 
     #Similarily for the ranking plot
     plot_ymin = axs[1].get_ylim()[0]
     axs[1].set_ylim(bottom = plot_ymin)
 
-    for location in resp_locations:
-        alpha = 0.6*magnitude[location]
-        #Generate values for y at the specfic location, with the max being the spectra value at the point
-        plot_y_vals = np.linspace(plot_ymin,ranking[location])
-        plot_x_vals = np.ones_like(plot_y_vals)*wn[location]
-        axs[1].plot(plot_x_vals,
-                    plot_y_vals,
-                    color = 'red',
-                    alpha = alpha,
-                    linewidth = 1)
-        for i in range(-width,width):
-            plot_y_vals = np.linspace(plot_ymin,ranking[location+i])
-            plot_x_vals = np.ones_like(plot_y_vals)*(wn[location+i])
+    #Reset the color wheel for ranking
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+
+    for cause, widths in explanations.keys():
+        #Get the next color for the cause
+        color = next(colors)
+        for location, width in zip(cause,widths):
+            alpha = 0.6*magnitude[location]
+            #Generate values for y at the specfic location, with the max being the spectra value at the point
+            plot_y_vals = np.linspace(plot_ymin,ranking[location])
+            plot_x_vals = np.ones_like(plot_y_vals)*wn[location]
             axs[1].plot(plot_x_vals,
                         plot_y_vals,
-                        color = 'red',
+                        color = color,
                         alpha = alpha,
                         linewidth = 1)
+            
+            for i in range(-width,width):
+                plot_y_vals = np.linspace(plot_ymin,ranking[location+i])
+                plot_x_vals = np.ones_like(plot_y_vals)*(wn[location+i])
+                axs[1].plot(plot_x_vals,
+                            plot_y_vals,
+                            color = color,
+                            alpha = alpha,
+                            linewidth = 1)
 
     #Save the plot
     fig.savefig(
