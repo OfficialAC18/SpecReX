@@ -135,8 +135,8 @@ def fixed_beam_search(spec_array,
         idx_rabbit = 1
         drop_indices = []
 
-        while idx != len(peaks) - 1:
-                if maxima_scaling_factor*peak_heights[idx] > peak_heights[idx+idx_rabbit]:
+        while idx < len(peaks):
+                if idx + idx_rabbit < len(peaks) and maxima_scaling_factor*peak_heights[idx] > peak_heights[idx+idx_rabbit]:
                         drop_indices.append(idx+idx_rabbit)
                         idx_rabbit+=1
                 else:

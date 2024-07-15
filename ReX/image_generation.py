@@ -140,10 +140,10 @@ def spectra_ranking_plot(destination, spectra, wn, ranking, explanations):
 
     #Calculate the local maxima, clear the noise based on the prominence of the peak
     #These are the peaks where we will plot the vertical lines
-    resp_locations = find_peaks(ranking)[0]
-    prominences = peak_prominences(ranking,resp_locations)[0]
-    prominences = prominences/max(prominences)
-    resp_locations = [loc for idx, loc in enumerate(resp_locations) if prominences[idx] >= 0.5]
+    # resp_locations = find_peaks(ranking)[0]
+    # prominences = peak_prominences(ranking,resp_locations)[0]
+    # prominences = prominences/max(prominences)
+    # resp_locations = [loc for idx, loc in enumerate(resp_locations) if prominences[idx] >= 0.5]
 
     #Calculate the alphas for the peaks
     magnitude = ranking/np.max(ranking)
@@ -154,9 +154,9 @@ def spectra_ranking_plot(destination, spectra, wn, ranking, explanations):
 
     #Get the color wheel for plotting
     prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
+    colors = iter(prop_cycle.by_key()['color'])
 
-    for cause, widths in explanations.keys():
+    for cause, widths in explanations.items():
         #Get the next color for the cause
         color = next(colors)
         for location, width in zip(cause,widths):
@@ -187,9 +187,9 @@ def spectra_ranking_plot(destination, spectra, wn, ranking, explanations):
 
     #Reset the color wheel for ranking
     prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
+    colors = iter(prop_cycle.by_key()['color'])
 
-    for cause, widths in explanations.keys():
+    for cause, widths in explanations.items():
         #Get the next color for the cause
         color = next(colors)
         for location, width in zip(cause,widths):
