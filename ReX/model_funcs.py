@@ -6,7 +6,9 @@ import numpy.typing as npt
 import platform
 import numpy as np
 import pandas as pd
+import importlib
 import onnxruntime as ort
+import torch
 import sys
 
 from ReX.logger import logger
@@ -150,6 +152,16 @@ def get_prediction(model, img_array, verbose=0, top_predictions=1):
     ps = np.argsort(predictions)[0][-top_predictions:]
     return ps, probabilities[0][ps]
 
+def get_prediction_pytorch(model, input, top_predictions=1):
+    with torch.no_grad():
+        predictions = model(torch.from_numpy(input))
+    predictions = predictions.detach().cpu().numpy()
+    probabilities = softmax(predictions)
+    print("Softmax Probabilities:",probabilities)
+    ps = np.argsort(predictions)[0][-top_predictions:]
+    return ps, probabilities[0][ps]
+
+
 
 def model_load(model, compile=True):
     m = None
@@ -166,7 +178,7 @@ def model_load(model, compile=True):
         sys.exit(-1)
 
 
-def get_prediction_function(model, top_predictions, gpu):
+def get_prediction_function(model, top_predictions, gpu, model_file = None, model_name = None, model_config = None, input_shape = None):
     if type(model) == str:
         if model.endswith(".onnx"):
             sess_options = ort.SessionOptions()
@@ -186,6 +198,39 @@ def get_prediction_function(model, top_predictions, gpu):
             shape = sess.get_inputs()[0].shape
             logger.info(f"model shape {shape}")
             return lambda mutant: get_onxx_prediction(mutant, top_predictions, sess, input_name), Shape(shape)
+        elif model.endswith('.pth'):
+            assert model_file is not None, "You need to pass a model file for PyTorch"
+            assert model_name is not None, "You need to pass the name of the model in the model file for PyTorch"
+            assert input_shape is not None, "You need to provide the shape of your input for PyTorch models"
+
+            #Loading Model from Model file
+            import importlib.util
+            import sys
+            spec = importlib.util.spec_from_file_location('module_name',model_file)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules['module_name'] = module
+            spec.loader.exec_module(module)
+            loaded_model = getattr(module, model_name)
+
+            if model_config is not None:
+                assert isinstance(model_config,dict), "Model config should be a dictionary"
+                loaded_model = loaded_model(**model_config)
+            else:
+                loaded_model = loaded_model()
+            
+            if gpu:
+                logger.info("using GPU for PyTorch inference session")
+                loaded_model.to('cuda')
+            
+            #Load model weights
+            loaded_model.load_state_dict(torch.load(model))
+
+            #Set model to eval
+            loaded_model.eval()
+
+            return (lambda mutant: get_prediction_pytorch(loaded_model, mutant, top_predictions=top_predictions), Shape(np.array(input_shape)))
+
+
         else:
             m = model_load(model)
             return (

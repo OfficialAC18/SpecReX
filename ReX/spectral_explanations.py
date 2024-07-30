@@ -160,7 +160,7 @@ def fixed_beam_search(spec_array,
                 exceeds_threhold = False
                 idx_rabbit = 1
                 while not exceeds_threhold and len(sim_resp) < 4:
-                        if idx + idx_rabbit < len(peaks) and (peaks[idx + idx_rabbit]/peaks[idx]) >= responsibility_similarity:
+                        if idx + idx_rabbit < len(peaks) and (peak_heights[idx + idx_rabbit]/peak_heights[idx]) >= responsibility_similarity:
                                 sim_resp.append(peaks[idx + idx_rabbit])
                                 idx_rabbit += 1
                         else:

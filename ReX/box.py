@@ -57,13 +57,10 @@ class BoxInternal:
             row_lt = random_pos(self.distribution, [self.row_start, row_mid-1, self.distribution_args])
             row_gt = random_pos(self.distribution, [row_mid+1, self.row_stop, self.distribution_args])  # type: ignore
         else:
-            #Would need a better strategy here
             row_mid = random_pos(self.distribution, [self.row_start, self.row_stop, self.distribution_args])
             row_lt = random_pos(self.distribution, [self.row_start, row_mid-1, self.distribution_args])
             row_gt = random_pos(self.distribution, [row_mid+1, self.row_stop, self.distribution_args])
 
-            # if row_mid is None or row_lt is None or row_gt is None:
-            #     return []
         children = []
         counter = 0
 
@@ -139,27 +136,6 @@ class BoxInternal:
             current_mask[:, self.row_start : self.row_stop] = True
         else:
             current_mask[self.row_start : self.row_stop] = True
-
-    #Function seems redundant, remove
-    # def interpolate_mask(self, 
-    #                      current_mask,
-    #                      wavenumber,
-    #                      spectra,
-    #                      method='linear'):
-    #     '''
-    #     Interpolate the mask at the bounds of the child node
-
-    #     args:
-    #         current_mask - The current mask, with all previous interpolations applied
-    #         wavenumber - The wavenumbers associated with the spectra
-    #         spectra - The spectra to be interpolated
-    #         method - Type of interpolation to be performed (linear, cubic (splines))
-    #     '''
-    #     spectra = interp_mask(mask = current_mask,
-    #                                wavenumber=wavenumber,
-    #                                spectra=spectra,
-    #                                method=method)
-
 
 #We use row_start/row_stop | col_start/col_stop as the regions where we interpolate
 class Box(BoxInternal, NodeMixin):

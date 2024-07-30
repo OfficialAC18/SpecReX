@@ -4,6 +4,7 @@
 
 from typing import List, Tuple
 import sys
+import csv
 import argparse
 import os
 from os.path import exists, expanduser
@@ -33,6 +34,10 @@ class Args:
         self.spectra_path = None
         self.wn_path = None 
         self.model = None
+        self.model_file = None
+        self.model_name = None
+        self.input_shape = None
+        self.model_config = None
         self.db: None | str = None
         # gpu support
         self.gpu: bool = False
@@ -78,7 +83,7 @@ class Args:
 
     def __repr__(self) -> str:
         return (
-            f"Args <file: {self.path}, model: {self.model}, image_dims: {self.image_dims}, gpu: {self.gpu}, "
+            f"Args <file: {self.spectra_path}, model: {self.model}, image_dims: {self.image_dims}, gpu: {self.gpu}, "
             + f"output_file: {self.output}, surface_plot: {self.surface}, contour_plot: {self.contour}, "
             + f"heatmap_plot: {self.heatmap}, "
             + f"means: {self.means}, stds: {self.stds}, "
@@ -163,7 +168,11 @@ def cmdargs():
     parser.add_argument("--contour", nargs="?", const="show", help="contour plot, optionally saved to <CONTOUR>")
     parser.add_argument("--heatmap", nargs="?", const="show", help="heatmap plot, optionally saved to <HEATMAP>")
     parser.add_argument("--targets", nargs="+", type=int, help="optional label(s) to use as ground truth")
-    parser.add_argument("--model", type=str, help="model, must be tensorflow or onnx compatible")
+    parser.add_argument("--model", type=str, help="model, must be tensorflow, onnx or PyTorch compatible")
+    parser.add_argument("--model_file", type=str, help="Definition file for the model (PyTorch)")
+    parser.add_argument("--model_name", type=str, help="Name of model in config file (PyTorch)")
+    parser.add_argument("--input_shape", nargs="*", type=int, default=[1,852], help="Input shape of the model (For PyTorch)")
+    parser.add_argument("--model_config", type=argparse.FileType('r'), help="Model configs (if any), for PyTorch model (should be a csv file)")
     parser.add_argument("--dims", nargs=2, type=int, help="image dimensions for resizing")
     parser.add_argument(
         "--strategy", "-s", type=str, help="explanation strategy, one of < multi | spatial | linear | spotlight >"
@@ -224,6 +233,14 @@ def shared_args(cmd_args, args):
         args.config_location = cmd_args.config
     if cmd_args.model is not None:
         args.model = cmd_args.model
+    if cmd_args.model_file is not None:
+        args.model_file = cmd_args.model_file
+    if cmd_args.model_name is not None:
+        args.model_name = cmd_args.model_name
+    if cmd_args.input_shape is not None:
+        args.input_shape = cmd_args.input_shape
+    if cmd_args.model_config is not None:
+        args.model_config = cmd_args.model_config
     if cmd_args.dims is not None:
         args.image_dims = cmd_args.dims
     if cmd_args.targets is not None:

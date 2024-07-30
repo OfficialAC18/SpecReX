@@ -22,6 +22,7 @@ from ReX.box import average_box_length, initialise_tree, build_tree
 from ReX.logger import logger
 
 CAUSAL = Enum("CAUSAL", ["Responsibility"])
+MUTANT_PATH = "/home/akchunya/Akchunya/MSc Thesis/SpecReX/mutants"
 
 _combinations = [
     [
