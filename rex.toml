@@ -18,7 +18,7 @@ gpu = false
 # maximum depth of tree, defaults to 4
 tree_depth = 10
 # limit on number of combinations to consider, defaults to 200
-search_limit = 2000
+search_limit = 200
 # minimum work acceptable, a scalar of <search_limit>
 min_work = 0.0
 # number of cpus to use, defaults to 1, not advised to set this higher if gpu = True
