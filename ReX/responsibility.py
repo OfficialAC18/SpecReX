@@ -87,38 +87,7 @@ def responsibility(parts, weights):
                 output[i] += weights[w] * 1 / k
 
     return output
-
-def inverse_responsibility(failed_parts, weights):
-    """Give responsibility to the partitions that were changed"""
-    output = np.zeros(4, dtype=np.float32)
-    failing_subpart = []
-    max_subpart = 0 #This is to ensure we don't give responsibility to nonexisiting subparts
-    for w, part in enumerate(failed_parts):
-        f_parts = list(map(lambda p: np.uint(p[-1]),part))
-
-        #Add the subparts that make up a failing part
-        for subpart in f_parts:
-            failing_subpart.append(subpart)
-            if subpart > max_subpart:
-                max_subpart = int(subpart)
-        
-    #Get the unique elements
-    failing_subpart = set(failing_subpart)
-    
-    for w, parts in enumerate(failed_parts):
-        k = 4 - len(part) #Calculates k based on the number of parts changed
-        #The parts are then those that are not in failing subpart
-        parts = [i for i in range(0,max_subpart+1) if i not in failing_subpart]
-
-        #calculate the responsbility
-        for p in parts:
-            if weights == []:
-                output[p] += 1/k
-            else:
-                output[p] += weights[w] * 1/k
-    
-    return output
-        
+     
 
 def causal_explanation(
     process,
@@ -132,7 +101,6 @@ def causal_explanation(
     repeated=False,
     seed=None,
     prediction_func=None,
-    invert=True,
     bounding_box=None,  # of the form [row_start, row_stop]
 ):
     """calculate causal responsiblity"""
@@ -166,10 +134,7 @@ def causal_explanation(
     else:
         tree = initialise_tree(spec_shape.length, args.distribution, args.distribution_args)
 
-    if args.distribution == Distribution.Adaptive and np.sum(responsibility_map) > 0.0:
-        build_tree(tree, args.tree_depth, args.min_box_size, pixel_ranking=responsibility_map, invert=invert)
-    else:
-        build_tree(tree, args.tree_depth, args.min_box_size, invert=True)
+    build_tree(tree, args.tree_depth, args.min_box_size)
 
     total_work = 0
     total_passing = 0
@@ -196,7 +161,6 @@ def causal_explanation(
             flag = False
             break
 
-        #Why is this there, won't we just not construct the tree to greater than tree_depth?
         if depth_reached > args.tree_depth:
             logger.info("sufficient depth reached after %d iterations for process %d", iters, process)
             flag = False
@@ -219,8 +183,6 @@ def causal_explanation(
             for processing in job:
                 held = [p for p in job if p not in [processing]]
                 children = subbox(tree, processing)
-                #Testing if an adaptive box size works better
-                # args.min_box_size = np.mean([child.length() for child in children])
                 children = list(filter(lambda child: child.length() >= args.min_box_size , children)) #Can we avoid creating them in the first place?
 
                 if len(children) == 0:
@@ -229,14 +191,12 @@ def causal_explanation(
                 for box in children:
                     box_lengths[box.name] = box.length()
 
-                #This is the magic sauce, this is where the major changes have to be done
-                #This needs to be optimized
                 for i in range(14):
                     #We need to save this seperately, rather than make it common with set held
                     partition = apply_combination(mask, children, i)
                     set_held(tree, mask, held)
 
-                    #This is in order to make sure bad mutant fails
+                    #Condition allows to skip examples no regions are to be interpolated
                     if np.any(mask):
                         #Now, Create the required mutant
                         mutant = interpolate_mask(mask,wn_array[0,:,:],spec_array[0,:,:], method = args.interp_method)
@@ -269,10 +229,9 @@ def causal_explanation(
         resp_weights = []
         for i, pred in enumerate(predictions):
             #This is to check if the predictions match what is required
-            if len(np.intersect1d(args.targets, pred)) > 0: #and l[1][i] > 0.95:
+            if len(np.intersect1d(args.targets, pred)) > 0:
                 passing_mutants.append(mutants[i])
                 pp = [child.name for child in partitions[i]]
-                
                 subset_exists = False
                 #Check if a subset of the same exists
                 for passed_part in passing_partitions:
@@ -295,7 +254,6 @@ def causal_explanation(
                     failing_partitions.append(fp)
 
         rp = responsibility(passing_partitions, resp_weights)
-        # rp += inverse_responsibility(failing_partitions, resp_weights)
 
         if np.sum(rp) == 0.0:
             break
@@ -310,7 +268,7 @@ def causal_explanation(
 
         areas = [np.sum([box_lengths[j] for j in job]) for job in passing_partitions]
         take = np.argsort(areas)
-        queue = [passing_partitions[i] for i in take[:1]] #Checking what happens when we take multiple regions
+        queue = [passing_partitions[i] for i in take[:1]]
         iters += 1
 
     if total_work < (args.search_limit * min_work) and total_restart_attempts > 0:

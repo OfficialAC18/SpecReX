@@ -55,28 +55,16 @@ class Args:
         self.verbosity = 0
         # save explanation to output
         self.output = None
-        self.surface: None | str = None
-        self.contour: None | str = None
-        self.heatmap: None | str = None
         # explanation production strategy
         self.strategy: None | Strategy = None
         self.chunk_size = 1
-        # args for spatial strategy
-        self.spatial_radius: None | int = None
-        self.spatial_eta: None | float = None
-        # spotlight args
-        self.spotlights: int = 0
-        self.spotlight_size: int = 0
-        self.spotlight_eta: float = 0.0
-        self.spotlight_step: int = 0
-        self.spotlight_objective_function = None
         # beams args
         self.beam_size: int = 0
         self.beam_eta: int = 0
         self.beam_engulf_window: int = 0
         self.responsibility_similarity: float = 0.0
         self.maxima_scaling_factor: float = 0.0
-        self.max_beams: int = 10
+        self.multiple: bool = True
         self.interp_method: str = None
 
         self.no_expansions = 0
@@ -84,17 +72,13 @@ class Args:
     def __repr__(self) -> str:
         return (
             f"Args <file: {self.spectra_path}, model: {self.model}, image_dims: {self.image_dims}, gpu: {self.gpu}, "
-            + f"output_file: {self.output}, surface_plot: {self.surface}, contour_plot: {self.contour}, "
-            + f"heatmap_plot: {self.heatmap}, "
+            + f"output_file: {self.output},"
             + f"means: {self.means}, stds: {self.stds}, "
             + f"explanation_strategy: {self.strategy}, "
-            + f"chunk size: {self.chunk_size}, "
-            + f"spatial_radius: {self.spatial_radius}, "
-            + f"spatial_eta: {self.spatial_eta}, seed: {self.seed}, db: {self.db}, "
+            + f"chunk size: {self.chunk_size},"
+            + f"seed: {self.seed}, db: {self.db}, "
             + f"preprocess: {self.preprocess}, verbosity: {self.verbosity}, "
-            + f"spotlights: {self.spotlights}, spotlight_size: {self.spotlight_size}, spotlight_eta: {self.spotlight_eta}, "
             + f"no_expansions: {self.no_expansions}, "
-            + f"obj_function: {self.spotlight_objective_function}"
         )
 
 
@@ -122,8 +106,6 @@ class CausalArgs(Args):
         self.cpus = 1
         self.iters = 1
         self.min_work = 0.0
-        self.adaptive = False
-        self.switch: None | int = None
         self.bootstrap = 2
 
     def __repr__(self) -> str:
@@ -135,7 +117,6 @@ class CausalArgs(Args):
             + f"tree_depth: {self.tree_depth}, search_limit: {self.search_limit}, "
             + f"min_box_size: {self.min_box_size}, max_box_size: {self.max_box_size}, weighted: {self.weighted}, "
             + f"data_locations: {self.data_location}, distribution: {self.distribution}, "
-            + f"adaptive {self.adaptive}, switch_on {self.switch}, bootstrap {self.bootstrap}, "
             + f"distribution_args: {self.distribution_args}, cpus: {self.cpus}, iterations: {self.iters}>"
         )
 
@@ -164,9 +145,6 @@ def cmdargs():
     parser.add_argument("--process_script", type=str, help="preprocessing script")
 
     parser.add_argument("-v", "--verbose", action="count", default=0, help="verbosity level, either -v or -vv")
-    parser.add_argument("--surface", nargs="?", const="show", help="surface plot, optionally saved to <SURFACE>")
-    parser.add_argument("--contour", nargs="?", const="show", help="contour plot, optionally saved to <CONTOUR>")
-    parser.add_argument("--heatmap", nargs="?", const="show", help="heatmap plot, optionally saved to <HEATMAP>")
     parser.add_argument("--targets", nargs="+", type=int, help="optional label(s) to use as ground truth")
     parser.add_argument("--model", type=str, help="model, must be tensorflow, onnx or PyTorch compatible")
     parser.add_argument("--model_file", type=str, help="Definition file for the model (PyTorch)")
@@ -201,31 +179,6 @@ def try_dict(args, dict_name):
         return {}
 
 
-def match_strategy(cmd_args):
-    """gets explanation extraction strategy"""
-    if cmd_args.strategy == "multi":
-        return Strategy.MultiSpotlight
-    if cmd_args.strategy == "linear":
-        return Strategy.Linear
-    if cmd_args.strategy == "spotlight":
-        return Strategy.Spotlight
-    return Strategy.Spatial
-
-
-def get_objective_function(multi_dict):
-    """gets objective function for spotlight search"""
-    try:
-        f = multi_dict["obj_function"]
-        if f == "mean":
-            return np.mean
-        if f == "max":
-            return np.max
-        if f == "min":
-            return np.min
-    except KeyError:
-        pass
-    return np.mean
-
 
 def shared_args(cmd_args, args):
     """parses shared args"""
@@ -241,22 +194,11 @@ def shared_args(cmd_args, args):
         args.input_shape = cmd_args.input_shape
     if cmd_args.model_config is not None:
         args.model_config = cmd_args.model_config
-    if cmd_args.dims is not None:
-        args.image_dims = cmd_args.dims
     if cmd_args.targets is not None:
         args.targets = np.array(cmd_args.targets)
-    if cmd_args.surface is not None:
-        args.surface = cmd_args.surface
-    if cmd_args.contour is not None:
-        args.contour = cmd_args.contour
-    if cmd_args.heatmap is not None:
-        args.heatmap = cmd_args.heatmap
-    if cmd_args.output is not None:
         args.output = cmd_args.output
     if cmd_args.verbose > 0:
         args.verbosity = cmd_args.verbose
-    if cmd_args.database is not None:
-        args.db = cmd_args.database
     args.processed = cmd_args.processed
 
 
@@ -285,9 +227,6 @@ def get_all_args(path=None):
 
     explain_dict = try_dict(config_file_args, "explanation")
     rex_dict = try_dict(config_file_args, "rex")
-
-    spatial_dict = try_dict(explain_dict, "spatial")
-    multi_dict = try_dict(explain_dict, "multi")
     spectral_dict = try_dict(explain_dict, "spectral")
 
     args = None
@@ -322,11 +261,6 @@ def get_all_args(path=None):
         d = dist["distribution"]
         args.distribution = str2distribution(d)
         args.distribution_args = key_or_default(dist, "dist_args", [])
-        args.adaptive = key_or_default(dist, "adaptive", False)
-        args.switch = key_or_default(dist, "switch", None)
-        if args.switch == 0:
-            args.switch = None
-            args.bootstrap = key_or_default(dist, "bootstrap", 2)
     except KeyError:
         pass
 
@@ -340,19 +274,6 @@ def get_all_args(path=None):
     args.stds = key_or_default(rex_dict, "stds", None)
 
     shared_args(cmd_args, args)
-    args.strategy = match_strategy(cmd_args)
-
-    # spatial args
-    args.spatial_radius = key_or_default(spatial_dict, "initial_radius", 10)
-    args.spatial_eta = key_or_default(spatial_dict, "radius_eta", 0.5)
-    args.no_expansions = key_or_default(spatial_dict, "no_expansions", 10)
-
-    # multi args
-    args.spotlights = key_or_default(multi_dict, "spotlights", 1)
-    args.spotlight_size = key_or_default(multi_dict, "spotlight_size", 50)
-    args.spotlight_eta = key_or_default(multi_dict, "spotlight_eta", 0.95)
-    args.spotlight_step = key_or_default(multi_dict, "spotlight_step", 4)
-    args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
 
     # spectral args
     args.beam_size = key_or_default(spectral_dict, "beam_size", 20)
@@ -360,7 +281,7 @@ def get_all_args(path=None):
     args.beam_engulf_window = key_or_default(spectral_dict, "beam_engulf_window", 10)
     args.responsibility_similarity = key_or_default(spectral_dict, "responsibility_similarity", 0.9)
     args.maxima_scaling_factor = key_or_default(spectral_dict, "scale_factor", 0.5)
-    args.max_beams = key_or_default(spectral_dict, "beams", 10)
+    args.multiple = key_or_default(spectral_dict, "multiple", True)
     args.interp_method = key_or_default(spectral_dict, "interp_method", "linear")
 
     args.chunk_size = key_or_default(explain_dict, "chunk", args.min_box_size)

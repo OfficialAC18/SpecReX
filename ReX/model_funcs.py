@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # from typing import List
 from scipy.special import softmax
-import tensorflow as tf
 import numpy.typing as npt
 import platform
 import numpy as np
 import pandas as pd
-import importlib
 import onnxruntime as ort
 import torch
-import sys
+import json
 
 from ReX.logger import logger
 
@@ -21,6 +19,7 @@ class Shape:
             _, x, y = array
         except:
             _, x, y = array.shape
+
         if x == 2 or x == 1:
             self.channels = x
             self.length = y
@@ -39,29 +38,10 @@ def negative_mask_multi(shape: Shape):
         return np.zeros((shape.channels, shape.length), dtype=bool)
     return np.zeros((shape.length, shape.channels), dtype=bool)
     
-#Default Normalization is SNV
-def convert_image_generic(path, x, y, means=None, stds=None):
-    img = tf.keras.preprocessing.image.load_img(path, target_size=(x, y))
-    img = tf.keras.preprocessing.image.img_to_array(img)
-
-    img = img.transpose(2, 0, 1)
-    img = img.astype("float32")
-
-    if means is not None and stds is not None:
-        logger.info("applying min-max normalization")
-        norm_img_data = np.zeros(img.shape).astype("float32")
-        for i in range(img.shape[0]):
-            norm_img_data[i, :, :] = (img[i, :, :] / 255 - means[i]) / stds[i]  # type: ignore
-        return np.expand_dims(norm_img_data, axis=0)
-    else:
-        img = img / 255.0  # type: ignore
-        img = np.expand_dims(img, axis=0)
-        return img
-
 #Default Normalization: SNV
-def convert_spec_wn_generic(spectra_path, wn_path, x, means = None, stds=None):
+def convert_spec_wn_generic(spectra_path, wn_path, input_length, order, means = None, stds=None):
     #Read Wavenumber and Spectra
-    #Read the shape as (1, length)
+    #Read inputs of shape (1, length) or (length, 1) or (length,)
     if 'csv' in spectra_path:
         spec_array = pd.read_csv(spectra_path, header = None).values
     else:
@@ -75,39 +55,59 @@ def convert_spec_wn_generic(spectra_path, wn_path, x, means = None, stds=None):
     spec_array = spec_array.astype('float32')
     wn_array = wn_array.astype('float32')
 
-    if Shape(np.expand_dims(spec_array,axis=0)).order == 'first':
-        channel_first = True
-    else:
-        channel_first = False
+    if len(spec_array.shape) == 1:
+        if order == 'first':
+            spec_array = spec_array.reshape(1,-1)
+            wn_array = wn_array.reshape(1,-1)
+        else:
+            spec_array = spec_array.reshape(-1,1)
+            wn_array = wn_array.reshape(-1,1)
 
+
+    assert len(spec_array.shape) == 2, f"Expected (1,{spec_array.shape[-1]}) or ({spec_array.shape[-1]},1), Got {spec_array.shape}" 
+    assert spec_array.shape == wn_array.shape, f"Mismatch in shape between spectra {spec_array.shape} and wavenumber {wn_array.shape}"
+
+    if Shape(np.expand_dims(spec_array,axis=0)).order != order:
+        spec_array = spec_array.transpose(1,0)
+        wn_array = wn_array.transpose(1,0)
+
+    assert Shape(np.expand_dims(spec_array,axis=0)).length >= input_length, "SpecReX cannot handle cases where the input is smaller than the model's input, please provide a custom processing script"
+    assert Shape(np.expand_dims(wn_array,axis=0)).length >= input_length, "SpecReX cannot handle cases where the input is smaller than the model's input, please provide a custom processing script"
 
     #To fit to a specfic shape, the current strategy is truncation to the shape (We can't handle shapes larger than the spectra as of now)
-    if x is not None:
-        if channel_first:
-            if x <= spec_array.shape[1] and x <= wn_array.shape[1]:
-                spec_array = spec_array[:,:x]
-                wn_array = wn_array[:,:x]
-        elif not channel_first:
-            if x <= spec_array.shape[0] and x <= wn_array.shape[0]:
-                spec_array = spec_array[:x,:]
-                wn_array = wn_array[:x,:]
+    if input_length is not None:
+        if order == 'first':
+            if input_length <= spec_array.shape[1] and input_length <= wn_array.shape[1]:
+                spec_array = spec_array[:,:input_length]
+                wn_array = wn_array[:,:input_length]
         else:
-            print("Currently, Interpolation is not supported, please provide custom preprocessing script")
-            sys.exit(0)
+            if input_length <= spec_array.shape[0] and input_length <= wn_array.shape[0]:
+                spec_array = spec_array[:input_length,:]
+                wn_array = wn_array[:input_length,:]
 
     if means is not None and stds is not None:
         logger.info("applying SNV normalization using provided values")
+
         #Make sure means is the same size as number of channels
-        assert len(means) == spec_array.shape[0], "The provided means is greater than the number of channels"
-        assert len(stds) == spec_array.shape[0], "The provided stds is greater than the number of channels" 
+        if order == 'first':
+            assert len(means) == spec_array.shape[0], "The provided means is greater than the number of channels"
+            assert len(stds) == spec_array.shape[0], "The provided stds is greater than the number of channels" 
         
-        for i in range(means):
-            spec_array[i,:] = spec_array[i,:] - means[i]
-            spec_array[i,:] = spec_array[i,:]/stds[i]
+            for i in range(len(means)):
+                spec_array[i,:] = spec_array[i,:] - means[i]
+                spec_array[i,:] = spec_array[i,:]/stds[i]
+        
+        if order == 'last':
+            assert len(means) == spec_array.shape[-1], "The provided means is greater than the number of channels"
+            assert len(stds) == spec_array.shape[-1], "The provided stds is greater than the number of channels" 
+        
+            for i in range(len(means)):
+                spec_array[:,i] = spec_array[:,i] - means[i]
+                spec_array[:,i] = spec_array[:,i]/stds[i]
 
     else:
         logger.info("applying SNV normalization using calculated values")
-        if channel_first:
+        if order == 'first':
             for i in range(spec_array.shape[0]):
                 mean = np.mean(spec_array[i,:])
                 std = np.std(spec_array[i,:])
@@ -122,20 +122,14 @@ def convert_spec_wn_generic(spectra_path, wn_path, x, means = None, stds=None):
 
 
         
-    return np.expand_dims(spec_array,axis = 0), np.expand_dims(wn_array, axis = 0)
+    return np.expand_dims(spec_array,axis = 0), np.expand_dims(wn_array, axis = 0), Shape(np.expand_dims(spec_array, axis = 0))
     
-def prepare_image(path, shape=None, means=None, stds=None):
-    if shape is None:
-        return convert_image_generic(path, 0, 0, means=means, stds=stds)
-    else:
-        return convert_image_generic(path, shape.width, shape.height, means=means, stds=stds)
-    
+   
 def prepare_spectra_wn(spectra_path, wn_path, shape=None, means=None, stds=None):
     if shape is None:
-        return convert_spec_wn_generic(spectra_path, wn_path, None, means=means, stds=stds)
+        return convert_spec_wn_generic(spectra_path, wn_path, None, shape.order, means=means, stds=stds)
     else:
-        return convert_spec_wn_generic(spectra_path, wn_path, shape.length, means=means, stds=stds)
-
+        return convert_spec_wn_generic(spectra_path, wn_path, shape.length, shape.order, means=means, stds=stds)
 
 
 def get_onxx_prediction(mutant, top_predictions, sess, input_name):
@@ -144,39 +138,19 @@ def get_onxx_prediction(mutant, top_predictions, sess, input_name):
     probabilities = softmax(predictions)
     return (ps, probabilities[ps])
 
-
-def get_prediction(model, img_array, verbose=0, top_predictions=1):
-    """return the top prediction(s)"""
-    predictions = model.predict(img_array, verbose=verbose)
-    probabilities = softmax(predictions)
-    ps = np.argsort(predictions)[0][-top_predictions:]
-    return ps, probabilities[0][ps]
-
 def get_prediction_pytorch(model, input, top_predictions=1):
     with torch.no_grad():
-        predictions = model(torch.from_numpy(input))
+        if next(model.parameters()).is_cuda:
+            input_data = torch.from_numpy(input).to(device='cuda')
+        else:
+            input_data = torch.from_numpy(input)
+        
+        predictions = model(input_data)
+
     predictions = predictions.detach().cpu().numpy()
     probabilities = softmax(predictions)
-    print("Softmax Probabilities:",probabilities)
     ps = np.argsort(predictions)[0][-top_predictions:]
     return ps, probabilities[0][ps]
-
-
-
-def model_load(model, compile=True):
-    m = None
-    if model == "mobilenet":
-        m = tf.keras.applications.mobilenet.MobileNet()
-    if model == "vgg19":
-        m = tf.keras.applications.vgg19.VGG19()
-    if model.endswith(".model") or model.endswith(".h5") or model.endswith(".hdf5"):
-        m = tf.keras.models.load_model(model)
-    if m is not None and compile:
-        m.compile(optimizer="adam")
-        return m
-    else:
-        sys.exit(-1)
-
 
 def get_prediction_function(model, top_predictions, gpu, model_file = None, model_name = None, model_config = None, input_shape = None):
     if type(model) == str:
@@ -198,7 +172,7 @@ def get_prediction_function(model, top_predictions, gpu, model_file = None, mode
             shape = sess.get_inputs()[0].shape
             logger.info(f"model shape {shape}")
             return lambda mutant: get_onxx_prediction(mutant, top_predictions, sess, input_name), Shape(shape)
-        elif model.endswith('.pth'):
+        elif model.endswith('.pth') or model.endswith('.pt'):
             assert model_file is not None, "You need to pass a model file for PyTorch"
             assert model_name is not None, "You need to pass the name of the model in the model file for PyTorch"
             assert input_shape is not None, "You need to provide the shape of your input for PyTorch models"
@@ -213,7 +187,9 @@ def get_prediction_function(model, top_predictions, gpu, model_file = None, mode
             loaded_model = getattr(module, model_name)
 
             if model_config is not None:
-                assert isinstance(model_config,dict), "Model config should be a dictionary"
+                assert model_config.endswith('.json'), "Model config should be a JSON file"
+                model_config = open(model_config)
+                model_config = json.load(model_config)
                 loaded_model = loaded_model(**model_config)
             else:
                 loaded_model = loaded_model()
@@ -223,26 +199,9 @@ def get_prediction_function(model, top_predictions, gpu, model_file = None, mode
                 loaded_model.to('cuda')
             
             #Load model weights
-            loaded_model.load_state_dict(torch.load(model))
+            loaded_model.load_state_dict(torch.load(model)[0])
 
             #Set model to eval
             loaded_model.eval()
 
             return (lambda mutant: get_prediction_pytorch(loaded_model, mutant, top_predictions=top_predictions), Shape(np.array(input_shape)))
-
-
-        else:
-            m = model_load(model)
-            return (
-                lambda mutant: get_prediction(m, mutant, top_predictions=top_predictions),
-                #This PURELY A PLACEHOLDER, In order to test the system
-                Shape((1,3195,1)),
-            )
-    else:
-        logger.warning(f"did not recognise {model}, so loading mobilenet")
-        # assume a default of mobilenet
-        model = model_load("mobilenet")
-        return (
-            lambda mutant: get_prediction(model, mutant, top_predictions=top_predictions),
-            model.input_shape,
-        )

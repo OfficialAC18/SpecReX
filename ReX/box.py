@@ -5,10 +5,7 @@ from typing import List
 from anytree import LevelOrderGroupIter, NodeMixin, RenderTree, PreOrderIter
 import numpy as np
 
-from ReX.distributions import Distribution, random_pos
-
-# from ReX.specaug import split_and_interpolate, interpolate_mask
-
+from ReX.distributions import random_pos
 
 class BoxInternal:
     def __init__(
@@ -44,22 +41,14 @@ class BoxInternal:
     def shape(self):
         return (self.row_stop - self.row_start,)
 
-    def spawn_children(self, min_size, invert, pos_ranking=None) -> List[Box]:
+    def spawn_children(self, min_size) -> List[Box]:
         """split a box into 4 contiguous sections"""
         if self.length() < min_size:
             return []
-        
-        if self.distribution == Distribution.Adaptive and pos_ranking is not None:
-            l = pos_ranking.shape
-            mask = np.zeros(l)
-            mask[self.row_start : self.row_stop] = pos_ranking[self.row_start : self.row_stop]
-            row_mid = random_pos(self.distribution, [self.row_start, self.row_stop, self.distribution_args])
-            row_lt = random_pos(self.distribution, [self.row_start, row_mid-1, self.distribution_args])
-            row_gt = random_pos(self.distribution, [row_mid+1, self.row_stop, self.distribution_args])  # type: ignore
-        else:
-            row_mid = random_pos(self.distribution, [self.row_start, self.row_stop, self.distribution_args])
-            row_lt = random_pos(self.distribution, [self.row_start, row_mid-1, self.distribution_args])
-            row_gt = random_pos(self.distribution, [row_mid+1, self.row_stop, self.distribution_args])
+    
+        row_mid = random_pos(self.distribution, [self.row_start, self.row_stop, self.distribution_args])
+        row_lt = random_pos(self.distribution, [self.row_start, row_mid-1, self.distribution_args])
+        row_gt = random_pos(self.distribution, [row_mid+1, self.row_stop, self.distribution_args])
 
         children = []
         counter = 0
@@ -125,11 +114,6 @@ class BoxInternal:
     def length(self):
         return self.row_stop - self.row_start
 
-    def remove_from_mask(self, current_mask):
-        """set everything in the bounding box to False"""
-        current_mask[self.row_start : self.row_stop] = False
-
-    # We do this and interpolate regions outside this
     def apply_to_mask(self, current_mask):
         """set everything in the bounding box to True"""
         if current_mask.shape[0] == 3 or current_mask.shape[0] == 1:
@@ -137,7 +121,6 @@ class BoxInternal:
         else:
             current_mask[self.row_start : self.row_stop] = True
 
-#We use row_start/row_stop | col_start/col_stop as the regions where we interpolate
 class Box(BoxInternal, NodeMixin):
     def __init__(
         self,
@@ -155,9 +138,9 @@ class Box(BoxInternal, NodeMixin):
         self.children = children
         self.interp_func = interp_func
 
-    def add_children_to_tree(self, min_size, invert, pos_ranking=None):
+    def add_children_to_tree(self, min_size):
         if not self.children:
-            self.children = self.spawn_children(min_size, pos_ranking=pos_ranking, invert=invert)
+            self.children = self.spawn_children(min_size)
 
 
 def initialise_tree(r_lim, distribution, distribution_args, r_start=0) -> Box:
@@ -171,7 +154,7 @@ def show_tree(tree):
 def average_box_length(tree, d) -> float:
     lengths = [[node.length() for node in children] for children in LevelOrderGroupIter(tree)]
     try:
-        return np.mean(lengths[d], axis=0) #Added the one to see if removing the initial massive split helps
+        return np.mean(lengths[d], axis=0)
     except IndexError:
         return 0.0
 
@@ -180,11 +163,7 @@ def box_dimensions(box: Box):
     return (box.row_start, box.row_stop)
 
 
-def boxes_name_and_dimensions(boxes: List[Box]):
-    return [(box.name, box_dimensions(box)) for box in boxes]
-
-
-def build_tree(root, depth, min_size, pos_ranking=None, invert=True) -> None:
+def build_tree(root, depth, min_size) -> None:
     for n in PreOrderIter(root):
         if n.depth <= depth and len(n.children) == 0:
-            n.add_children_to_tree(min_size, invert, pos_ranking=pos_ranking)
+            n.add_children_to_tree(min_size)

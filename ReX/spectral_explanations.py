@@ -7,7 +7,6 @@ from tqdm import tqdm
 
 from itertools import combinations
 
-from ReX.model_funcs import Shape
 from ReX.specaug import interpolate_mask
 
 def generate_combinations(lst):
@@ -112,7 +111,7 @@ def fixed_beam_search(spec_array,
         beam_eta,
         responsibility_similarity,
         maxima_scaling_factor,
-        max_beams,
+        multiple,
         target_class,
 ):
     
@@ -134,6 +133,9 @@ def fixed_beam_search(spec_array,
         idx = 0
         idx_rabbit = 1
         drop_indices = []
+        
+        #To determine whether to continue finding more explanations (In the case of Single/Multi)
+        find_explanations = True
 
         while idx < len(peaks):
                 if idx + idx_rabbit < len(peaks) and maxima_scaling_factor*peak_heights[idx] > peak_heights[idx+idx_rabbit]:
@@ -149,7 +151,7 @@ def fixed_beam_search(spec_array,
         #Test Causes
         idx = 0
         all_causes = []
-        while idx < len(peaks):
+        while idx < len(peaks) and find_explanations:
                 #First check if the peak is a cause
                 #For that interpolate out the other regions
                 #If it doesn't match, check if there are similar responsibility peaks
@@ -186,8 +188,6 @@ def fixed_beam_search(spec_array,
                                                 beam_size=beam_size,
                                                 shape=pos_ranking.shape)
                                 
-                                #For Debugging
-                                positions_unmasked = np.where(mask == 1)
 
                                 #Create the required mutant
                                 potential_cause = interpolate_mask(mask=mask,
@@ -199,6 +199,11 @@ def fixed_beam_search(spec_array,
                                 if prediction_func(potential_cause)[0] == target_class:
                                         all_causes.append(list(combination))
 
+                                        #Stop after one explanation if is not multiple
+                                        if not multiple:
+                                                find_explanations = False
+                                                break
+                                        
                                         #Filter all supersets of this particular combination
                                         removed_subsets.extend(list(filter(lambda x: set(combination).issubset(x),combinations)))
                                 

@@ -84,5 +84,5 @@ beam_eta = 1
 responsibility_similarity = 0.9
 # scaling factor for previous maxima
 scale_factor = 0.5
-# Maximum beams to explore as potential explanations
-beams = 10
+# Determing if we are going to calculate multiple explaantions
+multiple = true

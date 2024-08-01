@@ -3,11 +3,9 @@
 import os
 
 from ReX.config import get_all_args
-from ReX.image_generation import produce_image, spectra_ranking_plot, spectra_ranking_plot_single
+from ReX.visualisation import spectra_ranking_plot
 from ReX.explanation import explanation, summarise
 from ReX.logger import logger, set_log_level
-from ReX.ranking import Strategy
-import numpy as np
 
 def main():
     """main entry point to ReX cmdline tool"""
@@ -33,10 +31,6 @@ def main():
         if args.targets is not None:
             out = f"{name}_{args.targets[0]}{ext}"
             spectra_ranking_plot(out,spec_array,wn_array, ranking, explanations)
-            #spectra_ranking_plot_single(out,spec_array,wn_array,ranking)
-
-    if args.surface is not None or args.contour is not None or args.heatmap is not None:
-        produce_image(args, ranking)
 
 
 if __name__ == "__main__":
