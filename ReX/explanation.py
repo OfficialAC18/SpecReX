@@ -39,7 +39,7 @@ def summarise(points):
 
 
 def explanation(args):
-    prediction_func, input_shape = get_prediction_function(args.model, args.top_predictions, args.gpu, args.model_file, args.model_name, args.model_config, args.input_shape) #Put a test inside this function to figure out if it can be parallezed
+    prediction_func, input_shape = get_prediction_function(args.model, args.top_predictions, args.gpu, args.model_file, args.model_name, args.model_config, args.input_shape)
 
     if args.preprocess is not None:
         logger.info("using the user-provided preprocess script %s", args.preprocess_location)

@@ -19,7 +19,6 @@ except ImportError:
 
 
 from ReX.distributions import Distribution, str2distribution
-from ReX.ranking import Strategy
 from ReX.responsibility import CAUSAL
 
 
@@ -128,7 +127,7 @@ def get_config_file(path):
     return file_args
 
 
-def cmdargs():
+def cmdargs(args):
     """parses command line flags"""
     parser = argparse.ArgumentParser(
         prog="SpecReX",
@@ -159,7 +158,7 @@ def cmdargs():
         "--database", "-db", type=str, help="store output in sqlite database <DATABASE>, creating db if necessary"
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     return args
 
 
@@ -196,15 +195,16 @@ def shared_args(cmd_args, args):
         args.model_config = cmd_args.model_config
     if cmd_args.targets is not None:
         args.targets = np.array(cmd_args.targets)
+    if cmd_args.output is not None:
         args.output = cmd_args.output
     if cmd_args.verbose > 0:
         args.verbosity = cmd_args.verbose
     args.processed = cmd_args.processed
 
 
-def get_all_args(path=None):
+def get_all_args(args,path=None):
     """parses all arguments from config file and command line"""
-    cmd_args = cmdargs()
+    cmd_args = cmdargs(args)
 
     path = None
     if cmd_args.config is not None:
