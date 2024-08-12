@@ -2,7 +2,7 @@
 name = "SpecReX"
 version = "0.0.1"
 description = "causal Spectral Responsibility-based eXplanations of black-box-classifiers"
-authors = [{name = "Akchunya Chanchal", email = "akchunyachanchal@gmail.com"},{name = "David Kelly", email = "dkellino@gmail.com"},]
+authors = [{name = "Akchunya Chanchal", email = "akchunyachanchal@gmail.com"}]
 dependencies = [
     "tensorflow >= 2.10",
     "numba >= 0.57",
@@ -28,12 +28,12 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-# include = ["ReX"]
+# include = ["SpecReX"]
 exclude = []
 namespaces = false
 
 [project.scripts]
-rex = "ReX.rex:main"
+srex = "SpecReX.specrex:main"
 
 [tool.black]
 line-length = 120
@@ -47,7 +47,7 @@ testpaths = [
 ]
 
 [tool.pyright]
-include = ["rex"]
+include = ["srex"]
 exclude = ["**/__pycache__"]
 
 reportMissingImports = false
@@ -56,5 +56,5 @@ reportMissingTypeStubs = false
 pythonVersion = "3.10"
 
 # executionEnvironments = [
-# {root = "rex"}
+# {root = "srex"}
 # ]

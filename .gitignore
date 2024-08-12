@@ -3,3 +3,5 @@ build
 *.todo.txt.kate-swp
 *vscode
 todo.txt
+explanations/*
+tests/__pycache__/*

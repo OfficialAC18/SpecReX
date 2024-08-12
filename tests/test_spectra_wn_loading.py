@@ -1,6 +1,9 @@
 import pytest
 import numpy as np
 
+import warnings
+warnings.filterwarnings("ignore")
+
 
 from ReX.model_funcs import prepare_spectra_wn, Shape
 
@@ -11,10 +14,10 @@ from ReX.model_funcs import prepare_spectra_wn, Shape
 
 #
 
-PATH_FIRST_NUMPY = '/home/akchunya/Akchunya/MSc Thesis/SpecReX/tests/test_data/channel_first.npy'
-PATH_LAST_NUMPY = '/home/akchunya/Akchunya/MSc Thesis/SpecReX/tests/test_data/channel_last.npy'
-PATH_FIRST_CSV = '/home/akchunya/Akchunya/MSc Thesis/SpecReX/tests/test_data/channel_first.csv'
-PATH_LAST_CSV = '/home/akchunya/Akchunya/MSc Thesis/SpecReX/tests/test_data/channel_last.csv'
+PATH_FIRST_NUMPY = ''
+PATH_LAST_NUMPY = ''
+PATH_FIRST_CSV = ''
+PATH_LAST_CSV = ''
 
 required_length = 852
 order_first = 'first'

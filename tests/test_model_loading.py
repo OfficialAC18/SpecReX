@@ -1,18 +1,21 @@
 import pytest
 import numpy as np
 
+import warnings
+warnings.filterwarnings("ignore")
+
 from ReX.model_funcs import get_prediction_function
 
 #Test Model Loading
  
-PATH_ONNX = '/home/akchunya/Akchunya/MSc Thesis/Simulated Dataset/final_models/ONNX/single_peak_conv.onnx'
+PATH_ONNX = ''
 TOP_PREDS = 1
-PATH_PYTORCH_WEIGHTS = '/home/akchunya/Akchunya/MSc Thesis/Simulated Dataset/final_models/PyTorch/Single Peak Conv/checkpoint.pt'
-PATH_PYTORCH_DEF = '/home/akchunya/Akchunya/MSc Thesis/Simulated Dataset/final_models/PyTorch/Single Peak Conv/insilico_conv.py'
-PYTORCH_NAME = 'InSilicoConv'
-PATH_CONFIG = '/home/akchunya/Akchunya/MSc Thesis/Simulated Dataset/final_models/PyTorch/Single Peak Conv/params.json'
+PATH_PYTORCH_WEIGHTS = ''
+PATH_PYTORCH_DEF = ''
+PYTORCH_NAME = ''
+PATH_CONFIG = ''
 
-test_example = '/home/akchunya/Akchunya/MSc Thesis/Simulated Dataset/single_peak_class_0_mean.npy'
+test_example = ''
 input_shape_val = (1,1,852)
 
 #Known test values

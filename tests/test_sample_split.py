@@ -2,6 +2,9 @@ import numpy as np
 from scipy.stats import binom
 import pytest
 
+import warnings
+warnings.filterwarnings("ignore")
+
 from ReX.distributions import str2distribution, random_pos
 
 #Start and End point for the function

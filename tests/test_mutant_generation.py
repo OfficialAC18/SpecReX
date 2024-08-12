@@ -3,7 +3,11 @@ from scipy.interpolate import CubicSpline
 import random
 import pytest
 
+import warnings
+warnings.filterwarnings("ignore")
+
 from ReX.specaug import interpolate_mask
+
 
 #Test examples for spectra and wavenumbers
 spectra = np.random.randn(1,891).reshape(1,-1)
