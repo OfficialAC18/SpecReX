@@ -37,8 +37,8 @@ class SReX:
 
     def calc_responsibility(self, spectra: NDArray, wn: NDArray,
                             iters: int = 50, seed: int = 42,
-                            distribution: str = 'uniform', distribution_args: int = None,
-                            tree_depth: int = 10, min_box_size: int = 10,
+                            distribution: str = 'uniform', distribution_args: int = 0.7,
+                            tree_depth: int = 10, min_box_size: int = 25,
                             min_work: int = 200, interp_method: str = 'linear',
                             weighted: bool = False, search_limit: int = 200,
                             bounding_box: List[int] = None, total_restart_attempts: int = 5,
