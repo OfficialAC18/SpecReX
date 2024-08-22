@@ -10,7 +10,7 @@ import time
 from SpecReX.spectral_explanations import fixed_beam_search
 from SpecReX.model_funcs import *
 from SpecReX.logger import logger
-from SpecReX.responsibility import causal_explanation
+from SpecReX.responsibility import causal_explanation, causal_explanation_wrapper
 
 def spectral_explanations(args, spec_array, wn_array, prediction_func, pos_ranking):
     return fixed_beam_search(
@@ -117,3 +117,58 @@ def explanation(args):
     logger.info(time_taken)
 
     return pos_ranking, explanations, spec_array, wn_array
+
+
+def explanation_wrapper(prediction_func, spec_array,
+                         wn_array, spec_shape,
+                        iters, distribution,
+                        distribution_args, search_limit,
+                        tree_depth, weighted,
+                        min_box_size, interp_method,
+                        min_work, total_restart_attempts, seed, 
+                        bounding_box,targets = None):
+    if targets == None:
+        targets = prediction_func(spec_array)[0]
+    print("Spectra Classified as %s", targets)
+
+    start = time.time()
+    passing : int = 0
+    failing : int = 0
+    depth_reached: int = 0
+    avg_box_size: float = 0.0
+    pos_ranking = None
+
+    assert iters >= 1, "Number of iterations need to be >= 1"
+    resp_map = None
+    for i in trange(iters):
+        r, p, f, dr, avg_size = causal_explanation_wrapper(process = i,
+                                                           spec_array = spec_array,
+                                                           wn_array = wn_array, 
+                                                           spec_shape = spec_shape,
+                                                           distribution = distribution,
+                                                           distribution_args = distribution_args,
+                                                           search_limit = search_limit,
+                                                           tree_depth = tree_depth,
+                                                           targets = targets,
+                                                           weighted = weighted,
+                                                           min_box_size = min_box_size,
+                                                           interp_method = interp_method,
+                                                           resp_map = resp_map,
+                                                           min_work = min_work,
+                                                           total_restart_attempts = total_restart_attempts,
+                                                           repeated = False,
+                                                           seed = seed,
+                                                           prediction_func = prediction_func,
+                                                           bounding_box = bounding_box)
+        resp_map = r
+        passing += p
+        failing += f
+        depth_reached = max(dr, depth_reached)
+        avg_box_size += avg_size
+    
+    pos_ranking = resp_map if resp_map.max() == 0 else resp_map / resp_map.max()
+    avg_box_size /= iters
+
+    time_taken = time.time() - start
+
+    return pos_ranking, targets

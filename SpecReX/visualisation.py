@@ -148,10 +148,13 @@ def spectra_ranking_plot(destination, spectra, wn, ranking, explanations):
     fig.tight_layout()
     fig.subplots_adjust(right = 0.70)   
 
-    #Save the plot
-    fig.savefig(
-        destination,
-        dpi = 900,
-        bbox_inches = "tight"
-    )
+    if destination is None:
+        fig.show()
+    else:
+        #Save the plot
+        fig.savefig(
+            destination,
+            dpi = 900,
+            bbox_inches = "tight"
+        )
 

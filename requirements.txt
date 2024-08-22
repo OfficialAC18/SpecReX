@@ -9,6 +9,6 @@ tqdm >= 4.65.0
 sqlalchemy >= 2.0.16
 matplotlib >= 3.7.1
 scikit-image >= 0.21.0
-onnxruntime-gpu >= 1.15
+onnxruntime-gpu >= 1.19
 torch >= 2.2.0
 torchvision >= 0.17.0

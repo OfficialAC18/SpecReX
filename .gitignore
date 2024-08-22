@@ -5,3 +5,5 @@ build
 todo.txt
 explanations/*
 tests/__pycache__/*
+mutants_and_responsiblity/*
+mutants_and_responsibility/
