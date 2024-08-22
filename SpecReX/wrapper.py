@@ -118,6 +118,7 @@ class SReX:
         #Batching for meeting requirements of model
         self.spectra = spectra = np.expand_dims(spectra, axis = 0)
         self.wn = wn = np.expand_dims(wn, axis = 0)
+
         self.shape = spec_shape = Shape(spectra)
         self.interp_method = interp_method
 
