@@ -1,7 +1,7 @@
-from explanation import summarise, explanation_wrapper
-from spectral_explanations import fixed_beam_search
-from model_funcs import Shape, pred_fn_wrapper
-from visualisation import spectra_ranking_plot
+from SpecReX.explanation  import summarise, explanation_wrapper
+from SpecReX.spectral_explanations import fixed_beam_search
+from SpecReX.model_funcs import Shape, pred_fn_wrapper
+from SpecReX.visualisation import spectra_ranking_plot
 
 from typing import List
 
@@ -11,7 +11,7 @@ from numpy.typing import NDArray
 
 
 
-class SpecReX:
+class SReX:
     def __init__(self, model = None, pred_fn = None, top_predictions = 1):
 
         #The core stuff
