@@ -247,12 +247,12 @@ def causal_explanation(
 
         total_work += len(mutants)
 
-        #Save the mutants
-        if save_mutants > 0:
-            for idx, mutant in enumerate(mutants):
-                np.save(os.path.join(MUTANT_PATH,f"mutant_{idx}.npy"),mutant)
+        # #Save the mutants
+        # if save_mutants > 0:
+        #     for idx, mutant in enumerate(mutants):
+        #         np.save(os.path.join(MUTANT_PATH,f"mutant_{idx}.npy"),mutant)
             
-            save_mutants -= 1
+        #     save_mutants -= 1
 
         #Parallelize this
         #Create an arg value when intializing the prediction funtion
@@ -364,7 +364,8 @@ def causal_explanation_wrapper(
     repeated=False,
     seed=None,
     prediction_func=None,
-    bounding_box=None,  # of the form [row_start, row_stop]
+    bounding_box=None,
+    verbose = False # of the form [row_start, row_stop]
 ):
     """calculate causal responsiblity (wrapper function)"""
     
@@ -377,14 +378,16 @@ def causal_explanation_wrapper(
             new = process + seed
             np.random.seed(new)
             seed = new
-        print("random seed = %d", seed)
+        
+        if verbose:
+            print("random seed = ", seed)
 
     if responsibility_map is None:
         responsibility_map = np.zeros((spec_shape.length), dtype=np.float32)
 
     if bounding_box is not None:
         if len(bounding_box) != 2:
-            print("bounding_box should be a list of length 2, not %d", len(bounding_box))
+            print("bounding_box should be a list of length 2, not ", len(bounding_box))
             raise IndexError
         tree = initialise_tree(
             bounding_box[1],
@@ -410,28 +413,29 @@ def causal_explanation_wrapper(
 
     flag = True
     while flag:
-        print(
-            "main causal loop for process %d: iter = %d, depth reached = %d, " "total work so far = %d",
-            process,
-            iters,
-            depth_reached,
-            total_passing + total_failing,
-        )
+        if verbose:
+            print(
+                "main causal loop for process %d: iter = %d, depth reached = %d, " "total work so far = %d",
+                process,
+                iters,
+                depth_reached,
+                total_passing + total_failing,
+            )
 
-        if len(queue) == 0:
-            print("%d quitting here, as no smaller box passes", process)
-            flag = False
-            break
+            if len(queue) == 0:
+                print("%d quitting here, as no smaller box passes", process)
+                flag = False
+                break
 
-        if depth_reached > tree_depth:
-            print("sufficient depth reached after %d iterations for process %d", iters, process)
-            flag = False
-            break
+            if depth_reached > tree_depth:
+                print("sufficient depth reached after %d iterations for process %d", iters, process)
+                flag = False
+                break
 
-        if total_passing + total_failing > search_limit:
-            print("total work exceed: %d for process %d", total_passing + total_failing, process)
-            flag = False
-            break
+            if total_passing + total_failing > search_limit:
+                print("total work exceed: %d for process %d", total_passing + total_failing, process)
+                flag = False
+                break
 
         mutants = []
         partitions = []
@@ -559,7 +563,7 @@ def causal_explanation_wrapper(
 
     if total_work < (search_limit * min_work) and total_restart_attempts > 0:
         if total_restart_attempts == 2:
-          print("restaring iteration %d (1 attempt remaining) " "as minimun work not achieved", process)
+          print(f"restaring iteration {process} (1 attempt remaining) as minimun work not achieved")
         else:
             print("restarting iteration %d (%d attempts remaining) " "as minimum work of %d is not achieved.",
                 process,
@@ -585,15 +589,16 @@ def causal_explanation_wrapper(
             total_restart_attempts=5,
             repeated=True,
             seed=None,
-            prediction_func=None,
+            prediction_func=prediction_func,
             bounding_box=None,)
 
-    print("iteration %d = TOTAL PASSING: %d, TOTAL FAILING: %d " "MAX TREE DEPTH: %d, AVERAGE BOX LENGTH: %f",
-        process,
-        total_passing,
-        total_failing,
-        depth_reached,
-        average_box_length(tree, depth_reached),
-    )
+    if verbose:
+        print("iteration %d = TOTAL PASSING: %d, TOTAL FAILING: %d " "MAX TREE DEPTH: %d, AVERAGE BOX LENGTH: %f",
+            process,
+            total_passing,
+            total_failing,
+            depth_reached,
+            average_box_length(tree, depth_reached),
+        )
 
     return (responsibility_map, total_passing, total_failing, depth_reached, average_box_length(tree, depth_reached))

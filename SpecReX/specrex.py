@@ -27,10 +27,9 @@ def main():
 
     ranking, explanations ,spec_array, wn_array = explanation(args)
 
-    #Save the responsibilities as well
-    np.save(os.path.join(RESP_DIR,'responsibility.npy'),ranking)
-    np.save(os.path.join(RESP_DIR,'spec.npy'),spec_array)
-
+    # Save the responsibilities as well
+    # np.save(os.path.join(RESP_DIR,'responsibility.npy'),ranking)
+    # np.save(os.path.join(RESP_DIR,'spec.npy'),spec_array)
 
     pm, pos, mean, std, median = summarise(ranking)
     logger.info(

@@ -126,10 +126,12 @@ def explanation_wrapper(prediction_func, spec_array,
                         tree_depth, weighted,
                         min_box_size, interp_method,
                         min_work, total_restart_attempts, seed, 
-                        bounding_box,targets = None):
+                        bounding_box, verbose,
+                        targets = None):
+    
     if targets == None:
         targets = prediction_func(spec_array)[0]
-    print("Spectra Classified as %s", targets)
+    print("Spectra Classified as:", targets)
 
     start = time.time()
     passing : int = 0
@@ -159,6 +161,7 @@ def explanation_wrapper(prediction_func, spec_array,
                                                            repeated = False,
                                                            seed = seed,
                                                            prediction_func = prediction_func,
+                                                           verbose = verbose,
                                                            bounding_box = bounding_box)
         resp_map = r
         passing += p
@@ -170,5 +173,6 @@ def explanation_wrapper(prediction_func, spec_array,
     avg_box_size /= iters
 
     time_taken = time.time() - start
+    print("Time taken:",time_taken," secs")
 
     return pos_ranking, targets

@@ -2,6 +2,7 @@ from SpecReX.explanation  import summarise, explanation_wrapper
 from SpecReX.spectral_explanations import fixed_beam_search
 from SpecReX.model_funcs import Shape, pred_fn_wrapper
 from SpecReX.visualisation import spectra_ranking_plot
+from SpecReX.distributions import str2distribution
 
 from typing import List
 
@@ -42,7 +43,7 @@ class SReX:
                             min_work: int = 200, interp_method: str = 'linear',
                             weighted: bool = False, search_limit: int = 200,
                             bounding_box: List[int] = None, total_restart_attempts: int = 5,
-                            targets: int = None):
+                            targets: int = None, verbose: bool = False):
         '''
         Calculates the responsibility values for the given input array
         and calculate the summary statistics of the responsibility map.
@@ -97,6 +98,9 @@ class SReX:
         targets : (int, optional)
             The class(es) for which we want to attain the explanation. By default, SpecReX finds the explanation of the class that the model deems
             the input to be in. (Default : None)
+        
+        verbose : (bool, optional)
+            Get a detailed description of each iteration. (Default: False)
 
 
         Returns:
@@ -129,7 +133,7 @@ class SReX:
             wn_array=wn,
             spec_shape=spec_shape,
             iters=iters,
-            distribution=distribution,
+            distribution=str2distribution(distribution),
             distribution_args=distribution_args,
             search_limit=search_limit,
             tree_depth=tree_depth,
@@ -140,6 +144,7 @@ class SReX:
             total_restart_attempts=total_restart_attempts,
             seed=seed,
             bounding_box=bounding_box,
+            verbose = verbose,
             targets=targets
         )
 
@@ -222,7 +227,7 @@ class SReX:
 
         spectra_ranking_plot(
             destination=path,
-            spec_array = self.spectra,
+            spectra = self.spectra,
             wn = self.wn,
             ranking = self.resp,
             explanations =  self.exps
