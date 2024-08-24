@@ -139,7 +139,7 @@ def prepare_spectra_wn(spectra_path, wn_path, shape=None, means=None, stds=None)
         return convert_spec_wn_generic(spectra_path, wn_path, shape.length, shape.order, means=means, stds=stds)
 
 def pred_fn_wrapper(model, top_predictions):
-    if hasattr(model, 'graph') and hasattr(model, 'SerializeToString'):
+    if isinstance(model,ort.InferenceSession):
         return lambda mutant: get_onxx_prediction(mutant, top_predictions, model, model.get_inputs()[0].name)
     elif isinstance(model, torch.nn.Module):
         return lambda mutant: get_prediction_pytorch(model, mutant, top_predictions)

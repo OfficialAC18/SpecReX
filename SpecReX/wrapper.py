@@ -40,7 +40,7 @@ class SReX:
                             iters: int = 50, seed: int = 42,
                             distribution: str = 'uniform', distribution_args: int = 0.7,
                             tree_depth: int = 10, min_box_size: int = 25,
-                            min_work: int = 200, interp_method: str = 'linear',
+                            min_work: int = 0.2, interp_method: str = 'linear',
                             weighted: bool = False, search_limit: int = 200,
                             bounding_box: List[int] = None, total_restart_attempts: int = 5,
                             targets: int = None, verbose: bool = False):
@@ -77,7 +77,7 @@ class SReX:
             The minimum size of the mutant that will be accepted. (Default: 5)
         
         min_work : (int, optional)
-            The minmum number of examples to be considered when calculating responsibility. (Default: 200)
+            The minmum number of examples to be considered when calculating responsibility. (Default: 0.2)
 
         interp_method : (str, optional)
             The interpolation method used for generating mutants (linear, cubic). (Default: linear)
