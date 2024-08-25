@@ -566,6 +566,7 @@ def causal_explanation_wrapper(
           print(f"restaring iteration {process} (1 attempt remaining) as minimun work not achieved")
         else:
             print(f"restarting iteration {process} ({total_restart_attempts - 1} attempts remaining) as minimum work of {search_limit * min_work} is not achieved.")
+        
         return causal_explanation_wrapper(
             process,
             spec_array,
