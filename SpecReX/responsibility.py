@@ -505,7 +505,7 @@ def causal_explanation_wrapper(
 
         total_work += len(mutants)
 
-        if iters == return_mutant_iters:
+        if iters in return_mutant_iters:
             for mutant in mutants:
                 extracted_mutants.append(mutant)
 
