@@ -18,6 +18,7 @@ class SReX:
         #The core stuff
         self.resp = None
         self.exps = None
+        self.mutants = None
         self.pred_fn = pred_fn if model is None else pred_fn_wrapper(model, top_predictions)
 
         #Test the there is a prediction function
@@ -132,7 +133,7 @@ class SReX:
         self.interp_method = interp_method
 
         #Calculate the responsibility
-        self.resp, self.targets = explanation_wrapper(
+        self.resp, self.targets, self.mutants = explanation_wrapper(
             prediction_func=self.pred_fn,
             spec_array=spectra,
             wn_array=wn,
