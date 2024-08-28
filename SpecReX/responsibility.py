@@ -356,7 +356,7 @@ def causal_explanation_wrapper(
     tree_depth,
     targets,
     weighted,
-    min_box_size,
+    min_box_size, # of the form [row_start, row_stop]
     interp_method,
     responsibility_map=None,
     min_work=0.2,
@@ -365,7 +365,9 @@ def causal_explanation_wrapper(
     seed=None,
     prediction_func=None,
     bounding_box=None,
-    verbose = False # of the form [row_start, row_stop]
+    verbose = False,
+    extracted_mutants = [],
+    return_mutant_iters = -1,
 ):
     """calculate causal responsiblity (wrapper function)"""
     
@@ -409,7 +411,6 @@ def causal_explanation_wrapper(
     queue = [tree.name]
 
     box_lengths = {}
-    save_mutants = 2
 
     flag = True
     while flag:
@@ -504,6 +505,11 @@ def causal_explanation_wrapper(
 
         total_work += len(mutants)
 
+        if iters == return_mutant_iters:
+            for mutant in mutants:
+                extracted_mutants.append(mutant)
+
+
         #Parallelize this
         #Create an arg value when intializing the prediction funtion
         predictions = [prediction_func(np.expand_dims(mutant,axis = 0)) for mutant in mutants]  # type: ignore #Parallelize this, push as batch
@@ -562,11 +568,12 @@ def causal_explanation_wrapper(
         iters += 1
 
     if total_work < (search_limit * min_work) and total_restart_attempts > 0:
-        if total_restart_attempts == 2:
-          print(f"restaring iteration {process} (1 attempt remaining) as minimun work not achieved")
-        else:
-            print(f"restarting iteration {process} ({total_restart_attempts - 1} attempts remaining) as minimum work of {search_limit * min_work} is not achieved.")
-        
+        if verbose:
+            if total_restart_attempts == 2:
+                print(f"restaring iteration {process} (1 attempt remaining) as minimun work not achieved")
+            else:
+                print(f"restarting iteration {process} ({total_restart_attempts - 1} attempts remaining) as minimum work of {search_limit * min_work} is not achieved.")
+            
         return causal_explanation_wrapper(
             process,
             spec_array,
