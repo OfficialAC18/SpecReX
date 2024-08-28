@@ -127,7 +127,7 @@ def explanation_wrapper(prediction_func, spec_array,
                         min_box_size, interp_method,
                         min_work, total_restart_attempts, seed, 
                         bounding_box, verbose,
-                        targets = None):
+                        targets = None, return_mutant_iters = -1):
     
     if targets == None:
         targets = prediction_func(spec_array)[0]
@@ -139,6 +139,7 @@ def explanation_wrapper(prediction_func, spec_array,
     depth_reached: int = 0
     avg_box_size: float = 0.0
     pos_ranking = None
+    extracted_mutants = []
 
     assert iters >= 1, "Number of iterations need to be >= 1"
     resp_map = None
@@ -162,7 +163,9 @@ def explanation_wrapper(prediction_func, spec_array,
                                                            seed = seed,
                                                            prediction_func = prediction_func,
                                                            verbose = verbose,
-                                                           bounding_box = bounding_box)
+                                                           bounding_box = bounding_box,
+                                                           return_mutant_iters=return_mutant_iters,
+                                                           extracted_mutants=extracted_mutants)
         resp_map = r
         passing += p
         failing += f
@@ -175,4 +178,4 @@ def explanation_wrapper(prediction_func, spec_array,
     time_taken = time.time() - start
     print("Time taken:",time_taken," secs")
 
-    return pos_ranking, targets
+    return pos_ranking, targets, extracted_mutants

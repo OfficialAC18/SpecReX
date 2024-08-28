@@ -43,7 +43,7 @@ class SReX:
                             min_work: int = 0.2, interp_method: str = 'linear',
                             weighted: bool = False, search_limit: int = 200,
                             bounding_box: List[int] = None, total_restart_attempts: int = 5,
-                            targets: int = None, verbose: bool = False):
+                            targets: int = None, verbose: bool = False, return_mutant_iters: int = -1):
         '''
         Calculates the responsibility values for the given input array
         and calculate the summary statistics of the responsibility map.
@@ -101,6 +101,10 @@ class SReX:
         
         verbose : (bool, optional)
             Get a detailed description of each iteration. (Default: False)
+        
+        return_mutants_iter : (int, optional)
+            Return all the mutants at a particular iteration of the responsibility calculation. (Default: -1)
+
 
 
         Returns:
@@ -110,6 +114,7 @@ class SReX:
         pmean (float)
         pstd_dev (float)
         pmedian (int)
+        extracted_mutants (List[NDArray])
         
         '''
 
@@ -145,7 +150,8 @@ class SReX:
             seed=seed,
             bounding_box=bounding_box,
             verbose = verbose,
-            targets=targets
+            targets=targets,
+            return_mutant_iters = return_mutant_iters,
         )
 
         #Calculate the summaries of the responsibility landscape

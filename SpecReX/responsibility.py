@@ -593,7 +593,9 @@ def causal_explanation_wrapper(
             repeated=True,
             seed=None,
             prediction_func=prediction_func,
-            bounding_box=None,)
+            bounding_box=None,
+            return_mutant_iters=return_mutant_iters,
+            extracted_mutants=extracted_mutants)
 
     if verbose:
         print("iteration %d = TOTAL PASSING: %d, TOTAL FAILING: %d " "MAX TREE DEPTH: %d, AVERAGE BOX LENGTH: %f",
