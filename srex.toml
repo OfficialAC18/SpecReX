@@ -1,0 +1,88 @@
+[rex]
+# masking value for mutations, defaults to 0
+mask_value = 0
+# mask_value = [255,255,255]
+# number of predictions to consider for match, defaults to 1
+top_predictions = 1
+# random seed, only set for reproducibility
+seed = 42
+# whether to use gpu or not, defaults to true
+gpu = false
+# means for min-max normalization, these are for imagenet
+# means = [0.485, 0.456, 0.406]
+# standards devs for min-max normalization, these are for imagenet
+# stds = [0.229, 0.224, 0.225]
+
+
+[causal]
+# maximum depth of tree, defaults to 4
+tree_depth = 10
+# limit on number of combinations to consider, defaults to 200
+search_limit = 200
+# minimum work acceptable, a scalar of <search_limit>
+min_work = 0.0
+# number of cpus to use, defaults to 1, not advised to set this higher if gpu = True
+cpus = 1
+# number of times to run the algorithm, defaults to 1
+iters = 20
+# minimum child size, in wavenumber length
+min_size = 25
+# maximum child size, in wavenumber length
+max_size = 450
+# whether to weight responsibility by prediction confidence
+weighted = false
+
+[causal.distribution]
+# distribution for splitting the box, defaults to uniform. Possible choices are 'uniform' | 'binom' | 'betabinom'
+distribution = 'uniform'
+# supplimental arguments for distribution creation
+#dist_args = [1.1, 1.1]
+dist_args = 0.7
+# use the pixel ranking as a probability distribution, boostrapping from 'distribution' above
+adaptive = false
+# how many iterations of <distribution> to do before using <adaptive>
+bootstrap = 2
+# invert the adaptive distribution every <switch> iterations of the algorithm, comment out or set to 0 to disable
+switch = 0
+
+[explanation]
+# iterate through pixel ranking in chunks, defaults to causal.min_size
+chunk = 1
+
+[explanation.spatial]
+# initial search radius
+initial_radius = 1
+# increment to change radius
+radius_eta = 0.2
+# number of times to expand before quitting, defaults to 10
+no_expansions = 50
+
+[explanation.multi]
+# multi method (just spotlight so far)
+method = 'spotlight'
+# no of spotlights to launch
+spotlights = 10
+# default size of spotlight
+spotlight_size = 24
+# decrease spotlight by this amount
+spotlight_eta = 0.2
+# objective function for spotlight search. Possible options 'mean' | 'max' | 'min'
+obj_function = 'mean'
+
+[explanation.spectral]
+# Interpolation Method (Linear, Cubic)
+interp_method = 'linear'
+# Spectral Method [Fixed-Beam]
+method = 'fixedbeam'
+# Default size of beam
+beam_size = 20
+# engulf window
+beam_engulf_window = 10
+# Decrease beam width by this value (Decreases by this amount on both sides)
+beam_eta = 1
+# responsibility similarity
+responsibility_similarity = 0.9
+# scaling factor for previous maxima
+scale_factor = 0.5
+# Determing if we are going to calculate multiple explanations
+multiple = true

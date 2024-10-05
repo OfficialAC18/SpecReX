@@ -1,0 +1,60 @@
+[project]
+name = "SpecReX"
+version = "0.0.1"
+description = "causal Spectral Responsibility-based eXplanations of black-box-classifiers"
+authors = [{name = "Akchunya Chanchal", email = "akchunyachanchal@gmail.com"}]
+dependencies = [
+    "tensorflow >= 2.10",
+    "numba >= 0.57",
+    "opencv-python >= 4.7.0",
+    "scipy >= 1.10",
+    "imutils >= 0.5.4",
+    "toml >= 0.10",
+    "anytree >= 2.8.0",
+    "fastcache >= 1.1.0",
+    "tqdm >= 4.65.0",
+    "sqlalchemy >= 2.0.16",
+    "matplotlib >= 3.7.1",
+    "onnxruntime >= 1.17.0",
+    "scikit-image >= 0.21.0",
+    "pandas >= 2.2.0",
+    "torch >= 2.2.0",
+    "torchvision >= 0.17.0"
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+# include = ["SpecReX"]
+exclude = []
+namespaces = false
+
+[project.scripts]
+srex = "SpecReX.specrex:main"
+
+[tool.black]
+line-length = 120
+include = '\.pyi?$'
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+[tool.pyright]
+include = ["srex"]
+exclude = ["**/__pycache__"]
+
+reportMissingImports = false
+reportMissingTypeStubs = false
+
+pythonVersion = "3.10"
+
+# executionEnvironments = [
+# {root = "srex"}
+# ]
