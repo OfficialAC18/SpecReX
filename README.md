@@ -2,8 +2,8 @@
 Causal Responsibility Explanations for spectral classifiers
 
 <picture>
- <source media="(prefers-color-scheme: dark)" srcset="assets/rex_logo.png">
- <source media="(prefers-color-scheme: light)" srcset="assets/rex_logo.png">
+ <source media="(prefers-color-scheme: dark)" srcset="assets/SpecReX.png">
+ <source media="(prefers-color-scheme: light)" srcset="assets/SpecReX.png">
  <img alt="ReX Logo with dinosaur" src="YOUR-DEFAULT-IMAGE">
 </picture>
 
