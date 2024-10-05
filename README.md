@@ -13,7 +13,7 @@ The following instructions assumes ```conda```
 
 ``` bash
 conda create -n srex python=3.10
-conda activate rex
+conda activate srex
 pip install .
 ```
 
