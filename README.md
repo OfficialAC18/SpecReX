@@ -9,10 +9,10 @@ Causal Responsibility Explanations for spectral classifiers
 
 # Setup
 
-The following instructions assume ```conda```
+The following instructions assumes ```conda```
 
 ``` bash
-conda create -n rex python=3.10
+conda create -n srex python=3.10
 conda activate rex
 pip install .
 ```
