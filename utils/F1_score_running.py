@@ -1,3 +1,5 @@
+import numpy as np
+
 class F1_score_running:
     def __init__(self,classes = None):
         self.tp = [] if not classes else [0]*classes
@@ -45,12 +47,12 @@ class F1_score_running:
         f1 = 2*self.tp
         f1 /= 2*self.tp + self.fn + self.fp
 
-        if not self.average:
+        if not average:
             return f1
-        elif self.average == 'binary':
+        elif average == 'binary':
             return f1[-1]
-        elif self.average == 'macro':
+        elif average == 'macro':
             return np.mean(f1)
-        elif self.average == 'weighted':
+        elif average == 'weighted':
             return sum(ratio * f1)
         return f1
