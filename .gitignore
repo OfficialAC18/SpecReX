@@ -1,4 +1,4 @@
-*.egg-info
+#*.egg-info
 build
 *.todo.txt.kate-swp
 *vscode
@@ -7,3 +7,4 @@ explanations/*
 tests/__pycache__/*
 mutants_and_responsiblity/*
 mutants_and_responsibility/
+dataset/
