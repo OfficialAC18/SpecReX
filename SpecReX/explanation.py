@@ -136,6 +136,7 @@ def explanation_wrapper(prediction_func, spec_array,
     start = time.time()
     passing : int = 0
     failing : int = 0
+    avg_restarts : int = 0
     depth_reached: int = 0
     avg_box_size: float = 0.0
     pos_ranking = None
@@ -144,7 +145,7 @@ def explanation_wrapper(prediction_func, spec_array,
     assert iters >= 1, "Number of iterations need to be >= 1"
     resp_map = None
     for i in trange(iters):
-        r, p, f, dr, avg_size = causal_explanation_wrapper(process = i,
+        r, p, f, dr, avg_size, restarts = causal_explanation_wrapper(process = i,
                                                            spec_array = spec_array,
                                                            wn_array = wn_array, 
                                                            spec_shape = spec_shape,
@@ -169,13 +170,17 @@ def explanation_wrapper(prediction_func, spec_array,
         resp_map = r
         passing += p
         failing += f
+        avg_restarts += restarts
         depth_reached = max(dr, depth_reached)
         avg_box_size += avg_size
     
     pos_ranking = resp_map if resp_map.max() == 0 else resp_map / resp_map.max()
     avg_box_size /= iters
+    avg_restarts /= iters
+    avg_passing = passing /iters
+    avg_failing = failing / iters
 
     time_taken = time.time() - start
     print("Time taken:",time_taken," secs")
 
-    return pos_ranking, targets, extracted_mutants
+    return pos_ranking, targets, extracted_mutants, depth_reached, avg_box_size, avg_restarts, avg_passing, avg_failing

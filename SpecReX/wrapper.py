@@ -32,9 +32,10 @@ class SReX:
         self.pmedian = None
 
         #Stats
-        self.passing: int = 0
-        self.failing: int = 0
+        self.avg_passing: int = 0
+        self.avg_failing: int = 0
         self.depth_reached: int = 0
+        self.avg_restarts: int = 0
         self.avg_box_size: float = 0 
 
     def calc_responsibility(self, spectra: NDArray, wn: NDArray,
@@ -133,7 +134,7 @@ class SReX:
         self.interp_method = interp_method
 
         #Calculate the responsibility
-        self.resp, self.targets, self.mutants = explanation_wrapper(
+        self.resp, self.targets, self.mutants, self.depth_reached, self.avg_box_size, self.avg_restarts, self.avg_passing, self.avg_failing = explanation_wrapper(
             prediction_func=self.pred_fn,
             spec_array=spectra,
             wn_array=wn,

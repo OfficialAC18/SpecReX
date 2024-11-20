@@ -368,9 +368,10 @@ def causal_explanation_wrapper(
     verbose = False,
     extracted_mutants = [],
     return_mutant_iters = -1,
+    num_restarts = 0
 ):
     """calculate causal responsiblity (wrapper function)"""
-    
+
     if seed is not None:
         if repeated:
             new = seed + process + total_restart_attempts * 100
@@ -595,10 +596,11 @@ def causal_explanation_wrapper(
             prediction_func=prediction_func,
             bounding_box=None,
             return_mutant_iters=return_mutant_iters,
-            extracted_mutants=extracted_mutants)
+            extracted_mutants=extracted_mutants,
+            num_restarts=num_restarts + 1)
 
     if verbose:
-        print("iteration %d = TOTAL PASSING: %d, TOTAL FAILING: %d " "MAX TREE DEPTH: %d, AVERAGE BOX LENGTH: %f",
+        print(f"iteration {process} = TOTAL PASSING: {total_passing}, TOTAL FAILING: {total_failing}, MAX TREE DEPTH: {depth_reached}, AVERAGE BOX LENGTH: {average_box_length(tree, depth_reached)}",
             process,
             total_passing,
             total_failing,
@@ -606,4 +608,4 @@ def causal_explanation_wrapper(
             average_box_length(tree, depth_reached),
         )
 
-    return (responsibility_map, total_passing, total_failing, depth_reached, average_box_length(tree, depth_reached))
+    return (responsibility_map, total_passing, total_failing, depth_reached, average_box_length(tree, depth_reached), num_restarts)

@@ -195,7 +195,7 @@ def get_prediction_function(model, top_predictions, gpu, model_file = None, mode
             spec = importlib.util.spec_from_file_location('module_name',model_file)
             module = importlib.util.module_from_spec(spec)
             sys.modules['module_name'] = module
-            spec.loader.exec_module(module)
+            spec.loader.exec_module(module) 
             loaded_model = getattr(module, model_name)
 
             if model_config is not None:
